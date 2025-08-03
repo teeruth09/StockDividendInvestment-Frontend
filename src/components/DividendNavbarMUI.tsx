@@ -30,6 +30,10 @@ export default function DividendNavbarMUI() {
   
   const [mobileOpen, setMobileOpen] = useState(false)
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
+  
+  // เพิ่ม state สำหรับจัดการสถานะการ login
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [user, setUser] = useState<{ name: string; email: string } | null>(null)
 
   const navigation = [
     { name: 'หน้าแรก', href: '/' },
@@ -49,6 +53,20 @@ export default function DividendNavbarMUI() {
 
   const handleMenuClose = () => {
     setAnchorEl(null)
+  }
+
+  // ฟังก์ชันจำลองการ login
+  const handleLogin = () => {
+    setIsLoggedIn(true)
+    setUser({ name: 'John Doe', email: 'john@example.com' })
+    handleMenuClose()
+  }
+
+  // ฟังก์ชันการ logout
+  const handleLogout = () => {
+    setIsLoggedIn(false)
+    setUser(null)
+    handleMenuClose()
   }
 
   const drawer = (
@@ -71,6 +89,43 @@ export default function DividendNavbarMUI() {
             </ListItemButton>
           </ListItem>
         ))}
+        
+        {/* เพิ่ม Login/Register ใน mobile drawer */}
+        {!isLoggedIn && (
+          <>
+            <ListItem disablePadding>
+              <ListItemButton onClick={handleLogin}>
+                <ListItemText primary="เข้าสู่ระบบ" />
+              </ListItemButton>
+            </ListItem>
+            <ListItem disablePadding>
+              <ListItemButton>
+                <ListItemText primary="สมัครสมาชิก" />
+              </ListItemButton>
+            </ListItem>
+          </>
+        )}
+        
+        {/* เพิ่ม User menu ใน mobile drawer */}
+        {isLoggedIn && (
+          <>
+            <ListItem disablePadding>
+              <ListItemButton>
+                <ListItemText primary="โปรไฟล์" />
+              </ListItemButton>
+            </ListItem>
+            <ListItem disablePadding>
+              <ListItemButton>
+                <ListItemText primary="ตั้งค่า" />
+              </ListItemButton>
+            </ListItem>
+            <ListItem disablePadding>
+              <ListItemButton onClick={handleLogout}>
+                <ListItemText primary="ออกจากระบบ" />
+              </ListItemButton>
+            </ListItem>
+          </>
+        )}
       </List>
     </Box>
   )
@@ -147,44 +202,91 @@ export default function DividendNavbarMUI() {
             </Box>
           )}
 
-          {/* User Profile */}
+          {/* Authentication Section */}
           {!isMobile && (
-            <Box>
-              <IconButton
-                size="large"
-                aria-label="account of current user"
-                aria-controls="menu-appbar"
-                aria-haspopup="true"
-                onClick={handleProfileMenuOpen}
-                sx={{ 
-                  color: '#d1d5db', // gray-300
-                  backgroundColor: '#475569', // slate-600
-                  '&:hover': {
-                    backgroundColor: '#64748b', // slate-500
-                  },
-                }}
-              >
-                <AccountCircle />
-              </IconButton>
-              <Menu
-                id="menu-appbar"
-                anchorEl={anchorEl}
-                anchorOrigin={{
-                  vertical: 'bottom',
-                  horizontal: 'right',
-                }}
-                keepMounted
-                transformOrigin={{
-                  vertical: 'top',
-                  horizontal: 'right',
-                }}
-                open={Boolean(anchorEl)}
-                onClose={handleMenuClose}
-              >
-                <MenuItem onClick={handleMenuClose}>โปรไฟล์</MenuItem>
-                <MenuItem onClick={handleMenuClose}>ตั้งค่า</MenuItem>
-                <MenuItem onClick={handleMenuClose}>ออกจากระบบ</MenuItem>
-              </Menu>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              {!isLoggedIn ? (
+                // แสดง Login/Register buttons เมื่อยังไม่ได้ login
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <Button
+                    onClick={handleLogin}
+                    href="/login"
+                    sx={{
+                      color: '#d1d5db',
+                      borderColor: '#60a5fa',
+                      '&:hover': {
+                        backgroundColor: '#475569',
+                        borderColor: '#93c5fd',
+                      },
+                    }}
+                    variant="outlined"
+                    size="small"
+                  >
+                    เข้าสู่ระบบ
+                  </Button>
+                  <Button
+                    href="/register"
+                    sx={{
+                      backgroundColor: '#60a5fa',
+                      color: 'white',
+                      '&:hover': {
+                        backgroundColor: '#3b82f6',
+                      },
+                    }}
+                    variant="contained"
+                    size="small"
+                  >
+                    สมัครสมาชิก
+                  </Button>
+                </Box>
+              ) : (
+                // แสดง User Profile เมื่อ login แล้ว
+                <Box>
+                  <IconButton
+                    size="large"
+                    aria-label="account of current user"
+                    aria-controls="menu-appbar"
+                    aria-haspopup="true"
+                    onClick={handleProfileMenuOpen}
+                    sx={{ 
+                      color: '#d1d5db', // gray-300
+                      backgroundColor: '#475569', // slate-600
+                      '&:hover': {
+                        backgroundColor: '#64748b', // slate-500
+                      },
+                    }}
+                  >
+                    <AccountCircle />
+                  </IconButton>
+                  <Menu
+                    id="menu-appbar"
+                    anchorEl={anchorEl}
+                    anchorOrigin={{
+                      vertical: 'bottom',
+                      horizontal: 'right',
+                    }}
+                    keepMounted
+                    transformOrigin={{
+                      vertical: 'top',
+                      horizontal: 'right',
+                    }}
+                    open={Boolean(anchorEl)}
+                    onClose={handleMenuClose}
+                  >
+                    <MenuItem onClick={handleMenuClose}>
+                      <Box>
+                        <Typography variant="subtitle2">{user?.name}</Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {user?.email}
+                        </Typography>
+                      </Box>
+                    </MenuItem>
+                    <MenuItem onClick={handleMenuClose}>โปรไฟล์</MenuItem>
+                    <MenuItem onClick={handleMenuClose}>ตั้งค่า</MenuItem>
+                    <MenuItem onClick={handleLogout}>ออกจากระบบ</MenuItem>
+                  </Menu>
+                </Box>
+              )}
             </Box>
           )}
         </Toolbar>
