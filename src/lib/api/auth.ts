@@ -1,17 +1,8 @@
 // lib/api/auth.ts
-export interface LoginDto {
-  email: string;
-  password: string;
-}
-
-export interface RegisterDto {
-  username: string;
-  email: string;
-  password: string;
-}
+import { LoginDto,RegisterDto } from "@/types/user";
 
 export async function loginApi(data: LoginDto): Promise<{ accessToken: string }> {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user/login`, {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -23,12 +14,12 @@ export async function loginApi(data: LoginDto): Promise<{ accessToken: string }>
     const error = await res.json().catch(() => ({}));
     throw new Error(error.message || 'Login failed');
   }
-
+  console.log(res)
   return res.json();
 }
 
 export async function registerApi(data: RegisterDto): Promise<{ accessToken: string }> {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user/register`, {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/register`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

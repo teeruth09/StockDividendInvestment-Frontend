@@ -8,42 +8,71 @@ import {
   Button,
   Typography,
   Link,
-  Divider,
   IconButton,
-  InputAdornment,
   Checkbox,
   FormControlLabel,
+  Alert,
+  Snackbar,
+  CircularProgress,
 } from '@mui/material'
 import {
-  Visibility,
-  VisibilityOff,
   ArrowBack,
 } from '@mui/icons-material'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import NextLink from 'next/link'
 import { useRouter } from 'next/navigation'
-import { loginApi } from '@/lib/api/auth'
-import { Alert, Snackbar } from '@mui/material';
+import { useAuth } from '../contexts/AuthContext'
 
 export default function LoginPage() {
-    
     const router = useRouter()
+    const { login, isLoading, error, clearError, isAuthenticated } = useAuth()
+    
     const [showPassword, setShowPassword] = useState(false)
-    const [email, setEmail] = useState('')
+    const [username, setUsername] = useState('')
     const [password, setPassword] = useState('')
-    const [error, setError] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false)
+
+    // Redirect ถ้า login แล้ว
+    useEffect(() => {
+        if (isAuthenticated) {
+            router.push('/')
+        }
+    }, [isAuthenticated, router])
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        setError('');
-        console.log('Login attempt:', { email, password })
+        if (isSubmitting) return // ป้องกัน double submit
+        
+        setIsSubmitting(true)
+        clearError() // clear error เก่า
+        
+        console.log('Login attempt:', { username, password })
+        
         try {
-            const { accessToken } = await loginApi({ email, password });
-            localStorage.setItem('x-access-token', accessToken);
-            router.push('/')  // redirect Home page
-        } catch (err:any) {
-            setError(err.message);
+            await login({ username, password });
+            // จะ redirect อัตโนมัติผ่าน useEffect
+        } catch (err) {
+            // Error จะถูก handle ใน AuthContext แล้ว
+            console.error('Login failed:', err)
+        } finally {
+            setIsSubmitting(false)
         }
+    }
+
+    // แสดง loading ถ้ากำลังเช็ค auth status
+    if (isLoading) {
+        return (
+            <Box
+                sx={{
+                    minHeight: '100vh',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                }}
+            >
+                <CircularProgress />
+            </Box>
+        )
     }
 
     return (
@@ -68,14 +97,14 @@ export default function LoginPage() {
                 }}
                 >
                 {/* Header */}
-                <Box sx={{ textAlign: 'center', mb: 4 }}>
+                <Box sx={{ textAlign: 'center', mb: 4, position: 'relative' }}>
                     <IconButton
                         component={NextLink}
                         href="/"
                         sx={{ 
                             position: 'absolute', 
-                            top: 16, 
-                            left: 16,
+                            top: -16, 
+                            left: -16,
                             color: '#64748b' 
                     }}
                     >
@@ -114,12 +143,13 @@ export default function LoginPage() {
                 <Box component="form" onSubmit={handleSubmit}>
                     <TextField
                         fullWidth
-                        label="อีเมล"
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        label="Username"
+                        type="text"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
                         sx={{ mb: 3 }}
                         required
+                        disabled={isSubmitting}
                     />
 
                     <TextField
@@ -130,6 +160,7 @@ export default function LoginPage() {
                         onChange={(e) => setPassword(e.target.value)}
                         sx={{ mb: 2 }}
                         required
+                        disabled={isSubmitting}
                     />
 
                     {/* Show Password & Forgot Password */}
@@ -147,6 +178,7 @@ export default function LoginPage() {
                                 checked={showPassword}
                                 onChange={(e) => setShowPassword(e.target.checked)}
                                 size="small"
+                                disabled={isSubmitting}
                             />
                             }
                             label="แสดงรหัสผ่าน"
@@ -173,6 +205,7 @@ export default function LoginPage() {
                     type="submit"
                     fullWidth
                     variant="contained"
+                    disabled={isSubmitting || !username || !password}
                     sx={{
                         py: 1.5,
                         backgroundColor: '#60a5fa',
@@ -182,9 +215,19 @@ export default function LoginPage() {
                         '&:hover': {
                         backgroundColor: '#3b82f6',
                         },
+                        '&:disabled': {
+                        backgroundColor: '#e2e8f0',
+                        },
                     }}
                     >
-                    เข้าสู่ระบบ
+                    {isSubmitting ? (
+                        <>
+                            <CircularProgress size={20} sx={{ mr: 1 }} />
+                            กำลังเข้าสู่ระบบ...
+                        </>
+                    ) : (
+                        'เข้าสู่ระบบ'
+                    )}
                     </Button>
 
                     {/* Register Link */}
@@ -210,13 +253,15 @@ export default function LoginPage() {
                 </Box>
                 </Paper>
             </Container>
+            
+            {/* Error Snackbar */}
             <Snackbar
                 open={!!error}
                 autoHideDuration={4000}
-                onClose={() => setError('')}
+                onClose={clearError}
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                 >
-                <Alert severity="error" onClose={() => setError('')} sx={{ width: '100%' }}>
+                <Alert severity="error" onClose={clearError} sx={{ width: '100%' }}>
                     {error}
                 </Alert>
             </Snackbar>

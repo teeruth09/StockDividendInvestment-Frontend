@@ -22,6 +22,14 @@ import { Menu as MenuIcon, AccountCircle } from '@mui/icons-material'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState, MouseEvent } from 'react'
+import {jwtDecode} from 'jwt-decode'
+import { useEffect } from 'react'
+
+type JwtPayload = {
+  sub: string
+  username: string
+  // เพิ่มได้ตาม payload ที่ backend ใส่มา
+}
 
 export default function DividendNavbarMUI() {
   const pathname = usePathname()
@@ -33,7 +41,7 @@ export default function DividendNavbarMUI() {
   
   // เพิ่ม state สำหรับจัดการสถานะการ login
   const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const [user, setUser] = useState<{ name: string; email: string } | null>(null)
+  const [user, setUser] = useState<{ name: string; } | null>(null)
 
   const navigation = [
     { name: 'หน้าแรก', href: '/' },
@@ -42,6 +50,23 @@ export default function DividendNavbarMUI() {
     { name: 'ปฏิทินหลักทรัพย์', href: '/calendar' },
     { name: 'เกี่ยวกับภาษี', href: '/about' },
   ]
+
+  useEffect(() => {
+  const token = localStorage.getItem('x-access-token')
+  console.log(token)
+  if (token) {
+    try {
+      const decoded = jwtDecode<JwtPayload>(token)
+      setIsLoggedIn(true)
+      setUser({ name: decoded.username})
+      console.log(decoded)
+    } catch (err) {
+      console.error('Invalid token', err)
+      setIsLoggedIn(false)
+      setUser(null)
+    }
+  }
+}, [])
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen)
@@ -64,6 +89,7 @@ export default function DividendNavbarMUI() {
 
   // ฟังก์ชันการ logout
   const handleLogout = () => {
+    localStorage.removeItem('token')
     setIsLoggedIn(false)
     setUser(null)
     handleMenuClose()
