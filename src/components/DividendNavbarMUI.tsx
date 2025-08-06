@@ -23,7 +23,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState, MouseEvent } from 'react'
 import { useAuth } from '@/app/contexts/AuthContext'
-
+import { useRouter } from 'next/navigation'
 
 export default function DividendNavbarMUI() {
   const pathname = usePathname()
@@ -34,6 +34,7 @@ export default function DividendNavbarMUI() {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
   
   const { user, logout, isAuthenticated: isLoggedIn } = useAuth();
+  const router = useRouter()
 
   const navigation = [
     { name: 'หน้าแรก', href: '/' },
@@ -42,7 +43,6 @@ export default function DividendNavbarMUI() {
     { name: 'ปฏิทินหลักทรัพย์', href: '/calendar' },
     { name: 'เกี่ยวกับภาษี', href: '/about' },
   ]
-
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen)
@@ -59,6 +59,10 @@ export default function DividendNavbarMUI() {
   // ฟังก์ชันจำลองการ login
   const handleLogin = () => {
     handleMenuClose()
+  }
+
+  const handleProfileClick = () => {
+    router.push('/profile')
   }
 
 
@@ -104,7 +108,7 @@ export default function DividendNavbarMUI() {
           <>
             <ListItem disablePadding>
               <ListItemButton>
-                <ListItemText primary="โปรไฟล์" />
+                <ListItemText onClick={handleProfileClick} primary="โปรไฟล์" />
               </ListItemButton>
             </ListItem>
             <ListItem disablePadding>
@@ -269,7 +273,7 @@ export default function DividendNavbarMUI() {
                         </Typography> */}
                       </Box>
                     </MenuItem>
-                    <MenuItem onClick={handleMenuClose}>โปรไฟล์</MenuItem>
+                    <MenuItem onClick={handleProfileClick}>โปรไฟล์</MenuItem>
                     <MenuItem onClick={logout}>ออกจากระบบ</MenuItem>
                   </Menu>
                 </Box>
