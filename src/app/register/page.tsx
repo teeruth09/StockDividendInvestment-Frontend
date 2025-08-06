@@ -41,8 +41,9 @@ export default function RegisterPage() {
         }
         console.log('Register attempt:', { username, email, password, acceptTerms })
         try {
-            const res = await registerApi({ username, email, password });
-            //localStorage.setItem('accessToken', res.accessToken);
+            localStorage.removeItem('x-access-token');
+            const {access_token} = await registerApi({ username, email, password });
+            localStorage.setItem('x-access-token', access_token);
             router.push('/');
         } catch (err:any) {
             setError(err.message);

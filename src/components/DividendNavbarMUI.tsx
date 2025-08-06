@@ -22,14 +22,8 @@ import { Menu as MenuIcon, AccountCircle } from '@mui/icons-material'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState, MouseEvent } from 'react'
-import {jwtDecode} from 'jwt-decode'
-import { useEffect } from 'react'
+import { useAuth } from '@/app/contexts/AuthContext'
 
-type JwtPayload = {
-  sub: string
-  username: string
-  // เพิ่มได้ตาม payload ที่ backend ใส่มา
-}
 
 export default function DividendNavbarMUI() {
   const pathname = usePathname()
@@ -39,9 +33,7 @@ export default function DividendNavbarMUI() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
   
-  // เพิ่ม state สำหรับจัดการสถานะการ login
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const [user, setUser] = useState<{ name: string; } | null>(null)
+  const { user, logout, isAuthenticated: isLoggedIn } = useAuth();
 
   const navigation = [
     { name: 'หน้าแรก', href: '/' },
@@ -51,22 +43,6 @@ export default function DividendNavbarMUI() {
     { name: 'เกี่ยวกับภาษี', href: '/about' },
   ]
 
-  useEffect(() => {
-  const token = localStorage.getItem('x-access-token')
-  console.log(token)
-  if (token) {
-    try {
-      const decoded = jwtDecode<JwtPayload>(token)
-      setIsLoggedIn(true)
-      setUser({ name: decoded.username})
-      console.log(decoded)
-    } catch (err) {
-      console.error('Invalid token', err)
-      setIsLoggedIn(false)
-      setUser(null)
-    }
-  }
-}, [])
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen)
@@ -82,18 +58,9 @@ export default function DividendNavbarMUI() {
 
   // ฟังก์ชันจำลองการ login
   const handleLogin = () => {
-    setIsLoggedIn(true)
-    setUser({ name: 'John Doe', email: 'john@example.com' })
     handleMenuClose()
   }
 
-  // ฟังก์ชันการ logout
-  const handleLogout = () => {
-    localStorage.removeItem('token')
-    setIsLoggedIn(false)
-    setUser(null)
-    handleMenuClose()
-  }
 
   const drawer = (
     <Box onClick={handleDrawerToggle} sx={{ textAlign: 'center' }}>
@@ -141,12 +108,7 @@ export default function DividendNavbarMUI() {
               </ListItemButton>
             </ListItem>
             <ListItem disablePadding>
-              <ListItemButton>
-                <ListItemText primary="ตั้งค่า" />
-              </ListItemButton>
-            </ListItem>
-            <ListItem disablePadding>
-              <ListItemButton onClick={handleLogout}>
+              <ListItemButton onClick={logout}>
                 <ListItemText primary="ออกจากระบบ" />
               </ListItemButton>
             </ListItem>
@@ -301,15 +263,14 @@ export default function DividendNavbarMUI() {
                   >
                     <MenuItem onClick={handleMenuClose}>
                       <Box>
-                        <Typography variant="subtitle2">{user?.name}</Typography>
-                        <Typography variant="caption" color="text.secondary">
+                        <Typography variant="subtitle2">{user?.username}</Typography>
+                        {/* <Typography variant="caption" color="text.secondary">
                           {user?.email}
-                        </Typography>
+                        </Typography> */}
                       </Box>
                     </MenuItem>
                     <MenuItem onClick={handleMenuClose}>โปรไฟล์</MenuItem>
-                    <MenuItem onClick={handleMenuClose}>ตั้งค่า</MenuItem>
-                    <MenuItem onClick={handleLogout}>ออกจากระบบ</MenuItem>
+                    <MenuItem onClick={logout}>ออกจากระบบ</MenuItem>
                   </Menu>
                 </Box>
               )}

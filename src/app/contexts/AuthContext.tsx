@@ -12,7 +12,7 @@ interface JwtPayload {
 }
 
 interface AuthContextType {
-  user: User | null;
+  user: User | null; //ตอนนี้ส่งแค่ username
   token: string | null;
   login: (credentials: LoginDto) => Promise<void>;
   logout: () => void;
@@ -43,10 +43,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             logout(); // clear expired token
             } else {
             setToken(storedToken);
-            setUser({
-                user_id: decoded.sub,
-                username: decoded.username,
-            });
+            const userInfo = decodeToken(access_token);
+            if (userInfo) setUser(userInfo);
             }
         }
       } catch (err) {
@@ -68,16 +66,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { access_token } = await loginApi(credentials);
       localStorage.setItem('x-access-token', access_token);
       setToken(access_token); // หรือ jwtDecode(access_token)
-
-      // TODO: ดึง user info จาก token หรือ API call
-      // const userInfo = decodeToken(accessToken) หรือ fetchUserInfo(accessToken);
-      // setUser(userInfo);
-      
-      // ตอนนี้ใช้ข้อมูลจาก credentials ก่อน
-      setUser({
-        user_id: 'temp_id',
-        username: credentials.username
-      });
+      const userInfo = decodeToken(access_token);
+      if (userInfo) setUser(userInfo);
       
     } catch (err: any) {
       setError(err.message || 'เข้าสู่ระบบไม่สำเร็จ');
@@ -97,6 +87,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error('Logout error:', err);
     }
   };
+
+  const decodeToken = (token: string): User | null => {
+  try {
+    const decoded = jwtDecode<JwtPayload>(token);
+    return {
+        username: decoded.username
+    }
+  } catch {
+    return null;
+  }
+};
 
   const clearError = () => {
     setError(null);
