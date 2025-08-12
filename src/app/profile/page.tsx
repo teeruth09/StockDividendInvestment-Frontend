@@ -13,6 +13,7 @@ import {
   Container
 } from '@mui/material';
 import { Person, Assessment } from '@mui/icons-material';
+import { User, UserTaxInfoDto } from '@/types/user';
 
 interface InvestorData {
   username: string;
@@ -30,25 +31,46 @@ interface InvestorData {
 }
 
 const InvestmentProfileUI: React.FC = () => {
-  const [data, setData] = React.useState<InvestorData>({
+
+  const [userData, setUserData] = React.useState<User>({
+    user_id: '',
     username: 'somchai_investor',
     email: 'somchai@example.com',
-    year: '2024',
-    totalIncome: '500000',
-    salaryFromEmployment: '60000',
-    salaryFromBusiness: '60000',
-    otherIncome: '30000',
-    businessIncome: '30000',
-    lifeInsurance: '100000',
-    healthInsurance: '25000',
-    savingsAccountBalance: '50000',
-    rmfFunds: '50000'
   });
 
-  const handleInputChange = (field: keyof InvestorData) => (
+  const [data, setData] = React.useState<UserTaxInfoDto>({
+    tax_year: 2025,
+    annual_income: 500000,
+    tax_bracket: 0,
+    personal_deduction: 60000,
+    spouse_deduction: 60000,
+    child_deduction: 30000,
+    parent_deduction: 0,
+    life_insurance_deduction: 100000,
+    health_insurance_deduction: 0,
+    provident_fund_deduction: 0,
+    retirement_mutual_fund: 0,
+  });
+  const [isEditing, setIsEditing] = React.useState(false);
+  const [backupData, setBackupData] = React.useState<UserTaxInfoDto>(data);
+
+  const handleInputChange = (field: keyof UserTaxInfoDto) => (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
     setData({ ...data, [field]: event.target.value });
+  };
+  const handleEdit = () => {
+    setBackupData(data); // สำรองข้อมูลก่อนแก้ไข
+    setIsEditing(true);
+  };
+  const handleCancel = () => {
+    setData(backupData); // คืนค่าข้อมูลเดิม
+    setIsEditing(false);
+  };
+  const handleSave = () => {
+    // ตรงนี้คุณอาจเรียก API บันทึกข้อมูลได้
+    console.log("บันทึกข้อมูล", data);
+    setIsEditing(false);
   };
 
   return (
@@ -68,33 +90,55 @@ const InvestmentProfileUI: React.FC = () => {
           </Avatar>
           <Box sx={{ flex: 1 }}>
             <Typography variant="h4" fontWeight="bold" gutterBottom>
-              somchai_investor
+              {userData.username}
             </Typography>
             <Typography variant="body1" color="text.secondary" gutterBottom>
-              somchai@example.com
+              {userData.email}
             </Typography>
             <Typography variant="body2" color="text.secondary">
               ผู้ใช้ขั้นต้น • โปรไฟล์
             </Typography>
           </Box>
-          <Button
-            variant="outlined"
-            sx={{
-              borderRadius: 2,
-              textTransform: 'none',
-              color: 'text.secondary',
-              borderColor: '#e0e0e0'
-            }}
-          >
-            แก้ไขโปรไฟล์
-          </Button>
+          {!isEditing ?(
+            <Button
+              variant="outlined"
+              onClick={handleEdit}
+              sx={{
+                borderRadius: 2,
+                textTransform: 'none',
+                color: 'text.secondary',
+                borderColor: '#e0e0e0'
+              }}
+            >
+              แก้ไขโปรไฟล์
+            </Button>
+          ) : (
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={handleSave}
+                sx={{ borderRadius: 2, textTransform: 'none' }}
+              >
+                บันทึก
+              </Button>
+              <Button
+                variant="outlined"
+                color="inherit"
+                onClick={handleCancel}
+                sx={{ borderRadius: 2, textTransform: 'none' }}
+              >
+                ยกเลิก
+              </Button>
+            </Box>
+          )}
         </CardContent>
       </Card>
 
       {/* Main Content Grid */}
       <Grid container spacing={3}>
         {/* Left Column - User Info */}
-        <Grid item xs={12} md={5}>
+        {/* <Grid item xs={12} md={5}>
           <Card sx={{ borderRadius: 2 }}>
             <CardContent sx={{ p: 3 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
@@ -141,7 +185,7 @@ const InvestmentProfileUI: React.FC = () => {
               </Box>
             </CardContent>
           </Card>
-        </Grid>
+        </Grid> */}
 
         {/* Right Column - Investment Data */}
         <Grid item xs={12} md={7}>
@@ -150,7 +194,7 @@ const InvestmentProfileUI: React.FC = () => {
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
                 <Assessment sx={{ mr: 1, color: 'text.secondary' }} />
                 <Typography variant="h6" fontWeight="600">
-                  ข้อมูลการลงทุน
+                  ข้อมูลภาษีส่วนบุคคล
                 </Typography>
               </Box>
 
@@ -163,8 +207,9 @@ const InvestmentProfileUI: React.FC = () => {
                   <TextField
                     fullWidth
                     variant="outlined"
-                    value={data.year}
-                    onChange={handleInputChange('year')}
+                    value={data.tax_year}
+                    onChange={handleInputChange('tax_year')}
+                    disabled={!isEditing}
                     sx={{
                       '& .MuiOutlinedInput-root': {
                         backgroundColor: '#f5f5f5',
@@ -175,13 +220,14 @@ const InvestmentProfileUI: React.FC = () => {
                 </Grid>
                 <Grid item xs={6}>
                   <Typography variant="body2" color="text.secondary" gutterBottom>
-                    รายได้รวม (บาท)
+                    รายได้รวมต่อปี (บาท)
                   </Typography>
                   <TextField
                     fullWidth
                     variant="outlined"
-                    value={data.totalIncome}
-                    onChange={handleInputChange('totalIncome')}
+                    value={data.annual_income}
+                    onChange={handleInputChange('annual_income')}
+                    disabled={!isEditing}
                     sx={{
                       '& .MuiOutlinedInput-root': {
                         backgroundColor: '#f5f5f5',
@@ -194,13 +240,14 @@ const InvestmentProfileUI: React.FC = () => {
                 {/* Row 2 */}
                 <Grid item xs={6}>
                   <Typography variant="body2" color="text.secondary" gutterBottom>
-                    ค่าจ้างพนักงานปกติ (บาท)
+                    ลดหย่อนภาษีส่วนตัว (บาท)
                   </Typography>
                   <TextField
                     fullWidth
                     variant="outlined"
-                    value={data.salaryFromEmployment}
-                    onChange={handleInputChange('salaryFromEmployment')}
+                    value={data.personal_deduction}
+                    onChange={handleInputChange('personal_deduction')}
+                    disabled={!isEditing}
                     sx={{
                       '& .MuiOutlinedInput-root': {
                         backgroundColor: '#f5f5f5',
@@ -211,13 +258,14 @@ const InvestmentProfileUI: React.FC = () => {
                 </Grid>
                 <Grid item xs={6}>
                   <Typography variant="body2" color="text.secondary" gutterBottom>
-                    ค่าจ้างพนักงานธุรกิจ (บาท)
+                    ลดหย่อนภาษีคู่สมรส (บาท)
                   </Typography>
                   <TextField
                     fullWidth
                     variant="outlined"
-                    value={data.salaryFromBusiness}
-                    onChange={handleInputChange('salaryFromBusiness')}
+                    value={data.spouse_deduction}
+                    onChange={handleInputChange('spouse_deduction')}
+                    disabled={!isEditing}
                     sx={{
                       '& .MuiOutlinedInput-root': {
                         backgroundColor: '#f5f5f5',
@@ -230,13 +278,14 @@ const InvestmentProfileUI: React.FC = () => {
                 {/* Row 3 */}
                 <Grid item xs={6}>
                   <Typography variant="body2" color="text.secondary" gutterBottom>
-                    ค่าจ้างพนักงานอื่นๆ (บาท)
+                    ลดหย่อนภาษีบุตร (บาท)
                   </Typography>
                   <TextField
                     fullWidth
                     variant="outlined"
-                    value={data.otherIncome}
-                    onChange={handleInputChange('otherIncome')}
+                    value={data.child_deduction}
+                    onChange={handleInputChange('child_deduction')}
+                    disabled={!isEditing}
                     sx={{
                       '& .MuiOutlinedInput-root': {
                         backgroundColor: '#f5f5f5',
@@ -247,13 +296,14 @@ const InvestmentProfileUI: React.FC = () => {
                 </Grid>
                 <Grid item xs={6}>
                   <Typography variant="body2" color="text.secondary" gutterBottom>
-                    ค่าจ้างพนักงานจากอาชีพอิสระ (บาท)
+                    ลดหย่อนภาษีบิดามารดา (บาท)
                   </Typography>
                   <TextField
                     fullWidth
                     variant="outlined"
-                    value={data.businessIncome}
-                    onChange={handleInputChange('businessIncome')}
+                    value={data.parent_deduction}
+                    onChange={handleInputChange('parent_deduction')}
+                    disabled={!isEditing}
                     sx={{
                       '& .MuiOutlinedInput-root': {
                         backgroundColor: '#f5f5f5',
@@ -271,8 +321,9 @@ const InvestmentProfileUI: React.FC = () => {
                   <TextField
                     fullWidth
                     variant="outlined"
-                    value={data.lifeInsurance}
-                    onChange={handleInputChange('lifeInsurance')}
+                    value={data.life_insurance_deduction}
+                    onChange={handleInputChange('life_insurance_deduction')}
+                    disabled={!isEditing}
                     sx={{
                       '& .MuiOutlinedInput-root': {
                         backgroundColor: '#f5f5f5',
@@ -288,8 +339,9 @@ const InvestmentProfileUI: React.FC = () => {
                   <TextField
                     fullWidth
                     variant="outlined"
-                    value={data.healthInsurance}
-                    onChange={handleInputChange('healthInsurance')}
+                    value={data.health_insurance_deduction}
+                    onChange={handleInputChange('health_insurance_deduction')}
+                    disabled={!isEditing}
                     sx={{
                       '& .MuiOutlinedInput-root': {
                         backgroundColor: '#f5f5f5',
@@ -307,8 +359,9 @@ const InvestmentProfileUI: React.FC = () => {
                   <TextField
                     fullWidth
                     variant="outlined"
-                    value={data.savingsAccountBalance}
-                    onChange={handleInputChange('savingsAccountBalance')}
+                    value={data.provident_fund_deduction}
+                    onChange={handleInputChange('provident_fund_deduction')}
+                    disabled={!isEditing}
                     sx={{
                       '& .MuiOutlinedInput-root': {
                         backgroundColor: '#f5f5f5',
@@ -324,8 +377,9 @@ const InvestmentProfileUI: React.FC = () => {
                   <TextField
                     fullWidth
                     variant="outlined"
-                    value={data.rmfFunds}
-                    onChange={handleInputChange('rmfFunds')}
+                    value={data.retirement_mutual_fund}
+                    onChange={handleInputChange('retirement_mutual_fund')}
+                    disabled={!isEditing}
                     sx={{
                       '& .MuiOutlinedInput-root': {
                         backgroundColor: '#f5f5f5',

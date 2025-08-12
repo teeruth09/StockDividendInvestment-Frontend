@@ -161,7 +161,7 @@ export default function DividendNavbarMUI() {
               },
             }}
           >
-            SITD
+            SITD        
           </Typography>
 
           {/* Desktop Navigation */}
