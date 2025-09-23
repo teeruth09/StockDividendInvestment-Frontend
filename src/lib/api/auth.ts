@@ -14,7 +14,6 @@ export async function loginApi(data: LoginDto): Promise<{ accessToken: string }>
     const error = await res.json().catch(() => ({}));
     throw new Error(error.message || 'Login failed');
   }
-  console.log(res)
   return res.json();
 }
 

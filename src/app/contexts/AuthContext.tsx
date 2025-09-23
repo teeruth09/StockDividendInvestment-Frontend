@@ -1,9 +1,10 @@
 // contexts/AuthContext.tsx
 'use client';
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { LoginDto, User } from '@/types/user';
-import { loginApi } from '@/lib/api/auth';
+import { LoginDto, RegisterDto, User } from '@/types/user';
+import { loginApi, registerApi } from '@/lib/api/auth';
 import { jwtDecode } from 'jwt-decode';
+import { useRouter } from 'next/navigation'
 
 interface JwtPayload {
   sub: string;
@@ -14,6 +15,7 @@ interface JwtPayload {
 interface AuthContextType {
   user: User | null; //ตอนนี้ส่งแค่ username
   token: string | null;
+  register: (credentials: RegisterDto) => Promise<void>;
   login: (credentials: LoginDto) => Promise<void>;
   logout: () => void;
   isLoading: boolean;
@@ -29,6 +31,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter()
 
   // เช็ค token เมื่อ app เริ่มต้น
   useEffect(() => {
@@ -43,7 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             logout(); // clear expired token
             } else {
             setToken(storedToken);
-            const userInfo = decodeToken(access_token);
+            const userInfo = decodeToken(storedToken);
             if (userInfo) setUser(userInfo);
             }
         }
@@ -77,12 +80,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const register = async (credentials: RegisterDto) => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const { access_token } = await registerApi(credentials);
+      localStorage.setItem('x-access-token', access_token);
+      setToken(access_token); // หรือ jwtDecode(access_token)
+      const userInfo = decodeToken(access_token);
+      if (userInfo) setUser(userInfo);
+      
+    } catch (err: any) {
+      setError(err.message || 'เข้าสู่ระบบไม่สำเร็จ');
+      throw err; // ส่งต่อ error ให้ component จัดการ
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const logout = () => {
     try {
       localStorage.removeItem('x-access-token');
       setToken(null);
       setUser(null);
       setError(null);
+      router.push('/');
     } catch (err) {
       console.error('Logout error:', err);
     }
@@ -107,6 +130,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider value={{
       user,
       token,
+      register,
       login,
       logout,
       isLoading,

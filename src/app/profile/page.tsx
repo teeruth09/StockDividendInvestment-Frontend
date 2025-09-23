@@ -1,5 +1,5 @@
 "use client"
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Box,
   Card,
@@ -13,65 +13,126 @@ import {
   Container
 } from '@mui/material';
 import { Person, Assessment } from '@mui/icons-material';
-import { User, UserTaxInfoDto } from '@/types/user';
-
-interface InvestorData {
-  username: string;
-  email: string;
-  year: string;
-  totalIncome: string;
-  salaryFromEmployment: string;
-  salaryFromBusiness: string;
-  otherIncome: string;
-  businessIncome: string;
-  lifeInsurance: string;
-  healthInsurance: string;
-  savingsAccountBalance: string;
-  rmfFunds: string;
-}
+import { User, UserTaxInfo } from '@/types/user';
+import { getUserApi, getUserTaxInfoApi, updateUserTaxInfoApi } from '@/lib/api/user';
+import { useAuth } from '../contexts/AuthContext';
+import { useAlert } from '@/components/AppSnackbar';
 
 const InvestmentProfileUI: React.FC = () => {
-
-  const [userData, setUserData] = React.useState<User>({
+  const { user, token } = useAuth();
+  const [userData, setUserData] = useState<User>({
     user_id: '',
-    username: 'somchai_investor',
-    email: 'somchai@example.com',
+    username: 'mock',
+    email: 'mock@gmail.com',
   });
-
-  const [data, setData] = React.useState<UserTaxInfoDto>({
+  const [data, setData] = useState<UserTaxInfo>({
     tax_year: 2025,
-    annual_income: 500000,
+    annual_income: 0,
     tax_bracket: 0,
-    personal_deduction: 60000,
-    spouse_deduction: 60000,
-    child_deduction: 30000,
+    personal_deduction: 0,
+    spouse_deduction: 0,
+    child_deduction: 0,
     parent_deduction: 0,
-    life_insurance_deduction: 100000,
+    life_insurance_deduction: 0,
     health_insurance_deduction: 0,
     provident_fund_deduction: 0,
     retirement_mutual_fund: 0,
   });
   const [isEditing, setIsEditing] = React.useState(false);
-  const [backupData, setBackupData] = React.useState<UserTaxInfoDto>(data);
+  const [backupData, setBackupData] = useState<UserTaxInfo | null>(null);
 
-  const handleInputChange = (field: keyof UserTaxInfoDto) => (
+  function normalizeTaxInfo(apiData: Partial<UserTaxInfo>): UserTaxInfo {
+    return {
+      tax_year: apiData.tax_year ?? 2025,
+      annual_income: apiData.annual_income ?? 0,
+      tax_bracket: apiData.tax_bracket ?? 0,
+      personal_deduction: apiData.personal_deduction ?? 0,
+      spouse_deduction: apiData.spouse_deduction ?? 0,
+      child_deduction: apiData.child_deduction ?? 0,
+      parent_deduction: apiData.parent_deduction ?? 0,
+      life_insurance_deduction: apiData.life_insurance_deduction ?? 0,
+      health_insurance_deduction: apiData.health_insurance_deduction ?? 0,
+      provident_fund_deduction: apiData.provident_fund_deduction ?? 0,
+      retirement_mutual_fund: apiData.retirement_mutual_fund ?? 0,
+    };
+  }
+  const numberFields: (keyof UserTaxInfo)[] = [
+    'annual_income',
+    'tax_bracket',
+    'personal_deduction',
+    'spouse_deduction',
+    'child_deduction',
+    'parent_deduction',
+    'life_insurance_deduction',
+    'health_insurance_deduction',
+    'provident_fund_deduction',
+    'retirement_mutual_fund',
+  ];
+
+  useEffect(() => {
+    if (!user || !token) return;
+    const fetchData = async () => {
+      try {
+        const profile = await getUserApi(token,user.username);
+        setUserData(profile);
+
+        const taxInfo = await getUserTaxInfoApi(token, 2025); // taxYear ปัจจุบัน
+        if (taxInfo) {
+          setData(normalizeTaxInfo(taxInfo));
+        } 
+
+      } catch (err) {
+        console.error('Failed to fetch data', err);
+      }
+    };
+    fetchData();
+  }, [user, token]);
+
+  const handleInputChange = (field: keyof UserTaxInfo) => (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
-    setData({ ...data, [field]: event.target.value });
-  };
+    if (!data) return;
+    //const value = numberFields.includes(field) ? Number(event.target.value) : event.target.value;
+    let value: string | number = event.target.value;
+
+    if (numberFields.includes(field)) {
+      value = value === '' ? '' : Number(value); // ถ้าว่าง ให้เก็บเป็น '' เพื่อให้ 0 หายไปเวลาเริ่มพิมพ์
+    }
+
+    setData({ ...data, [field]: value });
+  };  
   const handleEdit = () => {
+    if (!data) return;
     setBackupData(data); // สำรองข้อมูลก่อนแก้ไข
     setIsEditing(true);
   };
   const handleCancel = () => {
+    if (!backupData) return;
     setData(backupData); // คืนค่าข้อมูลเดิม
     setIsEditing(false);
   };
-  const handleSave = () => {
-    // ตรงนี้คุณอาจเรียก API บันทึกข้อมูลได้
-    console.log("บันทึกข้อมูล", data);
-    setIsEditing(false);
+
+  const { showAlert } = useAlert();
+
+  const handleSave = async () => {
+    if (!data || !token) return;
+    try {
+      console.log("data",data)
+      const updated = await updateUserTaxInfoApi(token, data);
+      setData(updated);
+      setIsEditing(false);
+      showAlert('บันทึกข้อมูลภาษีสำเร็จ!', 'success');
+    } catch (err) {
+      console.error('Failed to save tax info', err);
+      showAlert('เกิดข้อผิดพลาดในการบันทึกข้อมูล', 'error');
+    }
   };
+
+  if (!userData || !data) {
+    return <div>Loading profile...</div>;
+  }
+
+  
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -207,6 +268,7 @@ const InvestmentProfileUI: React.FC = () => {
                   <TextField
                     fullWidth
                     variant="outlined"
+                    type="number"
                     value={data.tax_year}
                     onChange={handleInputChange('tax_year')}
                     disabled={!isEditing}
@@ -225,6 +287,7 @@ const InvestmentProfileUI: React.FC = () => {
                   <TextField
                     fullWidth
                     variant="outlined"
+                    type="number"
                     value={data.annual_income}
                     onChange={handleInputChange('annual_income')}
                     disabled={!isEditing}
@@ -245,6 +308,7 @@ const InvestmentProfileUI: React.FC = () => {
                   <TextField
                     fullWidth
                     variant="outlined"
+                    type="number"
                     value={data.personal_deduction}
                     onChange={handleInputChange('personal_deduction')}
                     disabled={!isEditing}
@@ -263,6 +327,7 @@ const InvestmentProfileUI: React.FC = () => {
                   <TextField
                     fullWidth
                     variant="outlined"
+                    type="number"
                     value={data.spouse_deduction}
                     onChange={handleInputChange('spouse_deduction')}
                     disabled={!isEditing}
@@ -283,6 +348,7 @@ const InvestmentProfileUI: React.FC = () => {
                   <TextField
                     fullWidth
                     variant="outlined"
+                    type="number"
                     value={data.child_deduction}
                     onChange={handleInputChange('child_deduction')}
                     disabled={!isEditing}
@@ -301,6 +367,7 @@ const InvestmentProfileUI: React.FC = () => {
                   <TextField
                     fullWidth
                     variant="outlined"
+                    type="number"
                     value={data.parent_deduction}
                     onChange={handleInputChange('parent_deduction')}
                     disabled={!isEditing}
@@ -321,6 +388,7 @@ const InvestmentProfileUI: React.FC = () => {
                   <TextField
                     fullWidth
                     variant="outlined"
+                    type="number"
                     value={data.life_insurance_deduction}
                     onChange={handleInputChange('life_insurance_deduction')}
                     disabled={!isEditing}
@@ -339,6 +407,7 @@ const InvestmentProfileUI: React.FC = () => {
                   <TextField
                     fullWidth
                     variant="outlined"
+                    type="number"
                     value={data.health_insurance_deduction}
                     onChange={handleInputChange('health_insurance_deduction')}
                     disabled={!isEditing}
@@ -359,6 +428,7 @@ const InvestmentProfileUI: React.FC = () => {
                   <TextField
                     fullWidth
                     variant="outlined"
+                    type="number"
                     value={data.provident_fund_deduction}
                     onChange={handleInputChange('provident_fund_deduction')}
                     disabled={!isEditing}
@@ -377,6 +447,7 @@ const InvestmentProfileUI: React.FC = () => {
                   <TextField
                     fullWidth
                     variant="outlined"
+                    type="number"
                     value={data.retirement_mutual_fund}
                     onChange={handleInputChange('retirement_mutual_fund')}
                     disabled={!isEditing}

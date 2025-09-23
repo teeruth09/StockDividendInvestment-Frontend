@@ -3,6 +3,7 @@ import './globals.css'
 import { Inter } from 'next/font/google'
 import DividendNavbarMUI from '@/components/DividendNavbarMUI' // MUI version
 import MUIThemeProvider from '@/components/MUIThemeProvider' // ใช้กับ MUI
+import { AlertProvider } from '@/components/AppSnackbar'
 import { usePathname } from 'next/navigation';
 import { AuthProvider } from './contexts/AuthContext'
 
@@ -18,10 +19,12 @@ export default function RootLayout({children,}: {children: React.ReactNode}) {
     <html lang="th">
       <body className={inter.className}>
           <MUIThemeProvider>
-            <AuthProvider>
-              {!hideNavbar && <DividendNavbarMUI />}
-                {children}
-            </AuthProvider>
+            <AlertProvider>
+              <AuthProvider>
+                {!hideNavbar && <DividendNavbarMUI />}
+                  {children}
+              </AuthProvider>
+            </AlertProvider>
           </MUIThemeProvider>
       </body>
     </html>
