@@ -17,6 +17,8 @@ import { User, UserTaxInfo } from '@/types/user';
 import { getUserApi, getUserTaxInfoApi, updateUserTaxInfoApi } from '@/lib/api/user';
 import { useAuth } from '../contexts/AuthContext';
 import { useAlert } from '@/components/AppSnackbar';
+import { NumericFormat } from 'react-number-format';
+import { NumberFormatValues } from 'react-number-format';
 
 const InvestmentProfileUI: React.FC = () => {
   const { user, token } = useAuth();
@@ -101,6 +103,16 @@ const InvestmentProfileUI: React.FC = () => {
 
     setData({ ...data, [field]: value });
   };  
+  const handleNumericChange =
+    (field: keyof UserTaxInfo) =>
+    (values: NumberFormatValues) => {
+      setData((prev) => ({
+        ...prev,
+        [field]: values.value === '' ? '' : Number(values.value),
+    }));
+  };
+
+
   const handleEdit = () => {
     if (!data) return;
     setBackupData(data); // สำรองข้อมูลก่อนแก้ไข
@@ -284,12 +296,13 @@ const InvestmentProfileUI: React.FC = () => {
                   <Typography variant="body2" color="text.secondary" gutterBottom>
                     รายได้รวมต่อปี (บาท)
                   </Typography>
-                  <TextField
+                  <NumericFormat
+                    value={data.annual_income}
+                    thousandSeparator
+                    onValueChange={handleNumericChange('annual_income')}
+                    customInput={TextField} // ใช้ MUI TextField ได้
                     fullWidth
                     variant="outlined"
-                    type="number"
-                    value={data.annual_income}
-                    onChange={handleInputChange('annual_income')}
                     disabled={!isEditing}
                     sx={{
                       '& .MuiOutlinedInput-root': {
@@ -305,12 +318,13 @@ const InvestmentProfileUI: React.FC = () => {
                   <Typography variant="body2" color="text.secondary" gutterBottom>
                     ลดหย่อนภาษีส่วนตัว (บาท)
                   </Typography>
-                  <TextField
+                  <NumericFormat
+                    value={data.personal_deduction}
+                    thousandSeparator
+                    onValueChange={handleNumericChange('personal_deduction')}
+                    customInput={TextField} // ใช้ MUI TextField ได้
                     fullWidth
                     variant="outlined"
-                    type="number"
-                    value={data.personal_deduction}
-                    onChange={handleInputChange('personal_deduction')}
                     disabled={!isEditing}
                     sx={{
                       '& .MuiOutlinedInput-root': {
@@ -324,12 +338,13 @@ const InvestmentProfileUI: React.FC = () => {
                   <Typography variant="body2" color="text.secondary" gutterBottom>
                     ลดหย่อนภาษีคู่สมรส (บาท)
                   </Typography>
-                  <TextField
+                   <NumericFormat
+                    value={data.spouse_deduction}
+                    thousandSeparator
+                    onValueChange={handleNumericChange('spouse_deduction')}
+                    customInput={TextField} // ใช้ MUI TextField ได้
                     fullWidth
                     variant="outlined"
-                    type="number"
-                    value={data.spouse_deduction}
-                    onChange={handleInputChange('spouse_deduction')}
                     disabled={!isEditing}
                     sx={{
                       '& .MuiOutlinedInput-root': {
@@ -345,12 +360,13 @@ const InvestmentProfileUI: React.FC = () => {
                   <Typography variant="body2" color="text.secondary" gutterBottom>
                     ลดหย่อนภาษีบุตร (บาท)
                   </Typography>
-                  <TextField
+                  <NumericFormat
+                    value={data.child_deduction}
+                    thousandSeparator
+                    onValueChange={handleNumericChange('child_deduction')}
+                    customInput={TextField} // ใช้ MUI TextField ได้
                     fullWidth
                     variant="outlined"
-                    type="number"
-                    value={data.child_deduction}
-                    onChange={handleInputChange('child_deduction')}
                     disabled={!isEditing}
                     sx={{
                       '& .MuiOutlinedInput-root': {
@@ -364,12 +380,13 @@ const InvestmentProfileUI: React.FC = () => {
                   <Typography variant="body2" color="text.secondary" gutterBottom>
                     ลดหย่อนภาษีบิดามารดา (บาท)
                   </Typography>
-                  <TextField
+                  <NumericFormat
+                    value={data.parent_deduction}
+                    thousandSeparator
+                    onValueChange={handleNumericChange('parent_deduction')}
+                    customInput={TextField} // ใช้ MUI TextField ได้
                     fullWidth
                     variant="outlined"
-                    type="number"
-                    value={data.parent_deduction}
-                    onChange={handleInputChange('parent_deduction')}
                     disabled={!isEditing}
                     sx={{
                       '& .MuiOutlinedInput-root': {
@@ -385,12 +402,13 @@ const InvestmentProfileUI: React.FC = () => {
                   <Typography variant="body2" color="text.secondary" gutterBottom>
                     ประกันชีวิต (บาท)
                   </Typography>
-                  <TextField
+                  <NumericFormat
+                    value={data.life_insurance_deduction}
+                    thousandSeparator
+                    onValueChange={handleNumericChange('life_insurance_deduction')}
+                    customInput={TextField} // ใช้ MUI TextField ได้
                     fullWidth
                     variant="outlined"
-                    type="number"
-                    value={data.life_insurance_deduction}
-                    onChange={handleInputChange('life_insurance_deduction')}
                     disabled={!isEditing}
                     sx={{
                       '& .MuiOutlinedInput-root': {
@@ -404,12 +422,13 @@ const InvestmentProfileUI: React.FC = () => {
                   <Typography variant="body2" color="text.secondary" gutterBottom>
                     ประกันสุขภาพ (บาท)
                   </Typography>
-                  <TextField
+                  <NumericFormat
+                    value={data.health_insurance_deduction}
+                    thousandSeparator
+                    onValueChange={handleNumericChange('health_insurance_deduction')}
+                    customInput={TextField} // ใช้ MUI TextField ได้
                     fullWidth
                     variant="outlined"
-                    type="number"
-                    value={data.health_insurance_deduction}
-                    onChange={handleInputChange('health_insurance_deduction')}
                     disabled={!isEditing}
                     sx={{
                       '& .MuiOutlinedInput-root': {
@@ -425,12 +444,13 @@ const InvestmentProfileUI: React.FC = () => {
                   <Typography variant="body2" color="text.secondary" gutterBottom>
                     กองทุนสำรองเลี้ยงชีพ (บาท)
                   </Typography>
-                  <TextField
+                  <NumericFormat
+                    value={data.provident_fund_deduction}
+                    thousandSeparator
+                    onValueChange={handleNumericChange('provident_fund_deduction')}
+                    customInput={TextField} // ใช้ MUI TextField ได้
                     fullWidth
                     variant="outlined"
-                    type="number"
-                    value={data.provident_fund_deduction}
-                    onChange={handleInputChange('provident_fund_deduction')}
                     disabled={!isEditing}
                     sx={{
                       '& .MuiOutlinedInput-root': {
@@ -444,12 +464,13 @@ const InvestmentProfileUI: React.FC = () => {
                   <Typography variant="body2" color="text.secondary" gutterBottom>
                     กองทุน RMF (บาท)
                   </Typography>
-                  <TextField
+                  <NumericFormat
+                    value={data.retirement_mutual_fund}
+                    thousandSeparator
+                    onValueChange={handleNumericChange('retirement_mutual_fund')}
+                    customInput={TextField} // ใช้ MUI TextField ได้
                     fullWidth
                     variant="outlined"
-                    type="number"
-                    value={data.retirement_mutual_fund}
-                    onChange={handleInputChange('retirement_mutual_fund')}
                     disabled={!isEditing}
                     sx={{
                       '& .MuiOutlinedInput-root': {
