@@ -1,7 +1,9 @@
+import StockTable from "@/components/stock/StockTable";
+
 export default function Page() {
   return (
     <div>
-      Calendar
+      <StockTable/>
     </div>
   );
 }
