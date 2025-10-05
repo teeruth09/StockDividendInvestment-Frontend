@@ -36,6 +36,7 @@ export default function DividendNavbarMUI() {
 
   const navigation = [
     { name: 'หน้าแรก', href: '/' },
+    { name: 'หุ้น', href: '/stock'},
     { name: 'ภาพรวมพอร์ต', href: '/portfolio' },
     { name: 'จำลองการซื้อ/ขาย', href: '/simulation' },
     { name: 'ปฏิทินหลักทรัพย์', href: '/calendar' },

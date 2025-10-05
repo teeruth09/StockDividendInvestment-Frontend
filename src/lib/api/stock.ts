@@ -93,3 +93,44 @@ export async function getStockPricesApi(
 
     return res.json();
 }
+
+
+// ข้อมูลราคาหุ้นสำหรับ chart (interval = '1D' | '5D' | '1M' | ...)
+export async function getStockChartApi(
+  symbol: string,
+  opts?: { interval?: '1D' | '5D' | '1M' | '3M' | '6M' | '1Y' | '3Y' }
+) {
+  const interval = opts?.interval || '1D';
+  const url = new URL(`${process.env.NEXT_PUBLIC_API_URL}/stock/${symbol}/prices/chart`);
+  url.searchParams.append("interval", interval);
+
+  const res = await fetch(url.toString(), {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+    cache: "no-store", 
+  });
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.message || "Failed to fetch stock chart data");
+  }
+
+  const data: Array<{
+    stock_symbol: string;
+    price_date: string;
+    open_price: number;
+    high_price: number;
+    low_price: number;
+    close_price: number;
+    price_change: number;
+    percent_change: number;
+    volume_shares: string;
+    volume_value: string;
+  }> = await res.json();
+
+  // แปลง date เป็น Date object สำหรับ chart.js
+  return data.map(d => ({
+    ...d,
+    price_date: new Date(d.price_date)
+  }));
+}
