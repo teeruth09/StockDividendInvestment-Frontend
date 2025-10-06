@@ -40,7 +40,7 @@ export default function DividendNavbarMUI() {
     { name: 'ภาพรวมพอร์ต', href: '/portfolio' },
     { name: 'จำลองการซื้อ/ขาย', href: '/simulation' },
     { name: 'ปฏิทินหลักทรัพย์', href: '/calendar' },
-    { name: 'เกี่ยวกับภาษี', href: '/about' },
+    { name: 'เกี่ยวกับภาษี', href: '/tax' },
   ]
 
   const handleDrawerToggle = () => setMobileOpen(!mobileOpen)
