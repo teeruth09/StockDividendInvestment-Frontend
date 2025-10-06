@@ -21,90 +21,59 @@ import {
   PointElement,
   Tooltip,
   Legend,
+  ChartData,
 } from "chart.js";
 import { useEffect, useState } from 'react';
-import { getStockChartApi } from '@/lib/api/stock';
+import { getStockChartApi, getStockSummaryApi } from '@/lib/api/stock';
+import { StockSummary } from '@/types/stock';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
 ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, Tooltip, Legend);
+
+type StockChartData = ChartData<'line', number[], string>; // labels เป็น string, data เป็น number
+
 
 export default function StockDetailPage() {
     const { symbol } = useParams() as { symbol: string }
         
     // mock data
     const stockSymbol = symbol;
-    const companyName = "ท่าอากาศยานไทย";
-    const latestPrice = 68.75;
-    const priceChange = -0.5;
-    const pricePercent = -0.72;
 
-    const [timeframe, setTimeframe] = useState<"1D" | "5D" | "1M" | "3M" | "6M" | "1Y" | "3Y">("1M");
+    const [timeframe, setTimeframe] = useState<"1D" | "5D" | "1M" | "3M" | "6M" | "1Y" | "3Y" | "5Y">("1D");
     //const [chartData, setChartData] = useState(getChartDataByTimeframe(timeframe));
-    const [chartData, setChartData] = useState({ labels: [], datasets: [] });
+    
+    const [chartData, setChartData] = useState<StockChartData>({
+        labels: [],
+        datasets: [],
+    });
+    const [summary, setSummary] = useState<StockSummary | null>(null);
+    const [latestPrice, setLatestPrice] = useState<number | null>(null);
+    const [stockName, setStockName] = useState<string | null>(null);
+    
 
+    const [tradeDate, setTradeDate] = useState<Date | null>(new Date());
+    const [tradeQty, setTradeQty] = useState<number>(100);
+    const [tradePrice, setTradePrice] = useState<number | null>(latestPrice);
 
-    // const handleTimeframeChange = (tf: typeof timeframe) => {
-    //     setTimeframe(tf);
-    //     setChartData(getChartDataByTimeframe(tf));
-    // };
 
     const handleTimeframeChange = (tf: typeof timeframe) => {
         setTimeframe(tf);
     };
+  
+    useEffect(() => {
+        const fetchSummary = async () => {
+            const data = await getStockSummaryApi(symbol);
+            setSummary(data);
+            setStockName(data.name)
+            setLatestPrice(data.latestPrice)
+        };
+        fetchSummary();
+    }, [symbol]);
 
-
-
-    const getChartDataByTimeframe = (tf: string) => {
-        switch (tf) {
-        case "1D":
-            return {
-            labels: ["09:00", "10:00", "11:00", "12:00", "13:00"],
-            datasets: [
-                {
-                label: "ราคาปิด",
-                data: [69, 70, 68, 71, 70],
-                borderColor: pricePercent >= 0 ? "#4caf50" : "#f44336", // เขียวหรือแดง
-                backgroundColor: pricePercent >= 0 ? "rgba(76, 175, 80, 0.2)" : "rgba(244, 67, 54, 0.2)",
-                tension: 0.3,
-                fill: true,
-                },
-            ],
-            };
-        case "5D":
-            return {
-            labels: ["Mon", "Tue", "Wed", "Thu", "Fri"],
-            datasets: [
-                {
-                label: "ราคาปิด",
-                data: [68, 69, 70, 67, 70],
-                borderColor: "#4caf50",
-                backgroundColor: "rgba(76, 175, 80, 0.2)",
-                tension: 0.3,
-                fill: true,
-                },
-            ],
-            };
-        case "1M":
-            return {
-            labels: ["1", "6", "11", "16", "21", "26"],
-            datasets: [
-                {
-                label: "ราคาปิด",
-                data: [69, 72, 66, 68, 65, 70],
-                borderColor: "#4caf50",
-                backgroundColor: "rgba(76, 175, 80, 0.2)",
-                tension: 0.3,
-                fill: true,
-                },
-            ],
-            };
-        // เพิ่ม 3M, 6M, 1Y, 5Y ตามต้องการ
-        default:
-            return {
-            labels: [],
-            datasets: [],
-            };
-        }
-    };
+        // เวลาใช้งานเช่นแสดงราคาผลต่างตาม timeframe
+    const currentSummary = summary?.summary[timeframe];
 
 
     useEffect(() => {
@@ -112,6 +81,8 @@ export default function StockDetailPage() {
             try {
                 const data = await getStockChartApi(symbol, {interval: timeframe});
 
+                // หาค่า percentChange จาก currentSummary
+                const percentChange = summary?.summary[timeframe]?.percentChange ?? 0;
                 //map data
                 setChartData({
                     labels: data.map(d => {
@@ -123,8 +94,8 @@ export default function StockDetailPage() {
                         {
                         label: "ราคาปิด",
                         data: data.map(d => d.close_price),
-                        borderColor: pricePercent >= 0 ? "#4caf50" : "#f44336",
-                        backgroundColor: pricePercent >= 0 ? "rgba(76, 175, 80, 0.2)" : "rgba(244, 67, 54, 0.2)",
+                        borderColor: percentChange >= 0 ? "#4caf50" : "#f44336",
+                        backgroundColor: percentChange >= 0 ? "rgba(76, 175, 80, 0.2)" : "rgba(244, 67, 54, 0.2)",
                         tension: 0.3,
                         fill: true,
                         }
@@ -135,15 +106,14 @@ export default function StockDetailPage() {
             }
         };
         fetchChartData();
-    }, [symbol, timeframe, pricePercent])
-
-
+    }, [symbol, timeframe, summary])
+    
 
     return (
         <Box sx={{ p: 3 }}>
         <Grid container spacing={2}>
             {/* Left Column */}
-            <Grid item xs={12} md={8}>
+            <Grid item xs={12} sm={12} md={8} lg={9}>
 
                 <Card sx={{ borderRadius: 2, mb: 2 }}>
                     <CardContent>
@@ -152,25 +122,36 @@ export default function StockDetailPage() {
                         <Box>
                         <Typography variant="h6">{stockSymbol}</Typography>
                         <Typography variant="body2" color="text.secondary">
-                            {companyName}
+                            {stockName}
                         </Typography>
                         </Box>
                         <Box textAlign="right">
                         <Typography variant="h5" fontWeight="bold">
-                            {latestPrice.toFixed(2)}
+                            {latestPrice ? latestPrice.toFixed(2) : "-"}
                         </Typography>
                         <Typography
                             variant="body2"
-                            color={priceChange >= 0 ? "success.main" : "error.main"}
+                            color={
+                                (currentSummary?.percentChange ?? 0) >= 0
+                                    ? "#4caf50" : "#f44336"
+                            }
                         >
-                            {priceChange} ({pricePercent}%)
+                            {currentSummary ? (
+                                <>
+                                    {currentSummary.endClose.toFixed(2)} &nbsp;
+                                    ({currentSummary.percentChange >= 0 ? "+" : ""}
+                                    {currentSummary.percentChange.toFixed(2)}%)
+                                </>
+                            ) : (
+                                "--"
+                            )}
                         </Typography>
                         </Box>
                     </Box>
 
                     {/* Timeframe buttons */}
                     <Box sx={{ display: "flex", gap: 1, mt: 2 }}>
-                        {["1D", "5D", "1M", "3M", "6M", "1Y", "5Y"].map((tf) => (
+                        {["1D", "5D", "1M", "3M", "6M", "1Y", "3Y", "5Y"].map((tf) => (
                         <Button
                             key={tf}
                             variant={timeframe === tf ? "contained" : "outlined"}
@@ -216,72 +197,74 @@ export default function StockDetailPage() {
             {/* Extra Info */}
             <Grid container spacing={2}>
                 <Grid item xs={12} md={6}>
-                <Card sx={{ borderRadius: 2, minHeight: 300, minWidth: 500}}>
-                    <CardContent>
-                    <Typography variant="subtitle1">ข้อมูลหลักทรัพย์</Typography>
-                    <Divider sx={{ my: 1 }} />
-                    <Typography variant="body2">ราคาเปิด: 69.00</Typography>
-                    <Typography variant="body2">ราคาสูงสุด: 72.00</Typography>
-                    <Typography variant="body2">ราคาต่ำสุด: 65.00</Typography>
-                    </CardContent>
-                </Card>
+                    <Card sx={{ borderRadius: 2, minHeight: 300, minWidth: 500}}>
+                        <CardContent>
+                        <Typography variant="subtitle1">ข้อมูลหลักทรัพย์</Typography>
+                        <Divider sx={{ my: 1 }} />
+                        <Typography variant="body2">ราคาเปิด: 69.00</Typography>
+                        <Typography variant="body2">ราคาสูงสุด: 72.00</Typography>
+                        <Typography variant="body2">ราคาต่ำสุด: 65.00</Typography>
+                        </CardContent>
+                    </Card>
                 </Grid>
                 <Grid item xs={12} md={6}>
-                <Card sx={{ borderRadius: 2, minHeight: 300, minWidth: 500}}>
-                    <CardContent>
-                    <Typography variant="subtitle1">ข้อมูลเงินปันผล</Typography>
-                    <Divider sx={{ my: 1 }} />
-                    <Typography variant="body2">อัตราปันผล: 1.80%</Typography>
-                    <Typography variant="body2">ล่าสุด: 2.50 บาท/หุ้น</Typography>
-                    <Typography variant="body2">ประกาศ: 2025-09-01</Typography>
-                    </CardContent>
-                </Card>
+                    <Card sx={{ borderRadius: 2, minHeight: 300, minWidth: 500}}>
+                        <CardContent>
+                        <Typography variant="subtitle1">ข้อมูลเงินปันผล</Typography>
+                        <Divider sx={{ my: 1 }} />
+                        <Typography variant="body2">อัตราปันผล: 1.80%</Typography>
+                        <Typography variant="body2">ล่าสุด: 2.50 บาท/หุ้น</Typography>
+                        <Typography variant="body2">ประกาศ: 2025-09-01</Typography>
+                        </CardContent>
+                    </Card>
                 </Grid>
             </Grid>
             </Grid>
 
             {/* Right Column - Trade Box */}
-            <Grid item xs={12} md={4}>
-            <Card sx={{ borderRadius: 2 }}>
-                <CardContent>
-                <Tabs value={0}>
-                    <Tab label="ซื้อ" />
-                    <Tab label="ขาย" />
-                </Tabs>
-                <Box sx={{ mt: 2 }}>
-                    <Typography variant="body2" color="text.secondary">
-                    หลักทรัพย์
-                    </Typography>
-                    <Typography variant="h6">{stockSymbol}</Typography>
-                    <Typography variant="body2" sx={{ mb: 2 }}>
-                    {companyName}
-                    </Typography>
+            <Grid item xs={12} sm={12} md={4} lg={3} sx={{ flexGrow: 1 }}>
+                <Card sx={{ borderRadius: 2, width: "100%", maxWidth: { xs: 360, sm: "100%" } }}>
+                    <CardContent>
+                    <Tabs value={0}>
+                        <Tab label="ซื้อ" />
+                        <Tab label="ขาย" />
+                    </Tabs>
 
-                    <TextField
-                    fullWidth
-                    type="number"
-                    label="จำนวนหุ้น"
-                    defaultValue={100}
-                    sx={{ mb: 2 }}
-                    />
-                    <TextField
-                    fullWidth
-                    type="number"
-                    label="ราคาต่อหุ้น (บาท)"
-                    defaultValue={latestPrice}
-                    sx={{ mb: 2 }}
-                    />
+                    <Box sx={{ mt: 2, display: "flex", flexDirection: "column", gap: 2 }}>
+                        <Typography variant="body2" color="text.secondary">หลักทรัพย์</Typography>
+                        <Typography variant="h6">{stockSymbol}</Typography>
+                        <Typography variant="body2">{stockName}</Typography>
 
-                    <Typography variant="body2">
-                    มูลค่ารวม: {100 * latestPrice} บาท
-                    </Typography>
+                        <LocalizationProvider dateAdapter={AdapterDateFns}>
+                        <DatePicker
+                            label="เลือกวันที่ดำเนินการ"
+                            value={tradeDate}
+                            onChange={(newDate) => {
+                            setTradeDate(newDate);
+                            if (newDate) fetchPriceByDate(stockSymbol, newDate).then(setTradePrice);
+                            }}
+                            renderInput={(params) => <TextField fullWidth {...params} />}
+                        />
+                        </LocalizationProvider>
 
-                    <Button variant="contained" fullWidth sx={{ mt: 2 }}>
-                    ดำเนินการซื้อ
-                    </Button>
-                </Box>
-                </CardContent>
-            </Card>
+                        <TextField fullWidth type="number" label="จำนวนหุ้น" value={tradeQty} onChange={(e) => setTradeQty(Number(e.target.value))} />
+                        <TextField
+                        fullWidth
+                        type="number"
+                        label="ราคาต่อหุ้น (บาท)"
+                        value={tradePrice ?? latestPrice ?? ""}
+                        onChange={(e) => setTradePrice(Number(e.target.value))}
+                        InputLabelProps={{ shrink: true }}
+                        />
+
+                        <Typography variant="body2">
+                        มูลค่ารวม: {(tradeQty ?? 0) * (tradePrice ?? latestPrice)} บาท
+                        </Typography>
+
+                        <Button variant="contained" fullWidth>ดำเนินการซื้อ</Button>
+                    </Box>
+                    </CardContent>
+                </Card>
             </Grid>
         </Grid>
         </Box>

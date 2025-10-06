@@ -21,6 +21,7 @@ import {
 import { getStockListApi } from "@/lib/api/stock";
 import { Stock } from "@/types/stock";
 import { StockSector } from "@/types/enum";
+import Link from "next/link";
 
 type Order = 'asc' | 'desc';
 
@@ -197,7 +198,18 @@ export default function StockTable() {
             {!loading &&
               sortedStocks.map((stock) => (
                 <TableRow key={stock.stock_symbol}>
-                  <TableCell>{stock.stock_symbol}</TableCell>
+                  <TableCell>
+                    <Link
+                      href={`/stock/${stock.stock_symbol}`}
+                      style={{
+                        color: "#1976d2",
+                        textDecoration: "none",
+                        fontWeight: 600,
+                      }}
+                    >
+                      {stock.stock_symbol}
+                    </Link>
+                    </TableCell>
                   <TableCell>{StockSector[stock.sector as keyof typeof StockSector]}</TableCell>
                   <TableCell align="right">{stock.historicalPrices?.[0]?.close_price?.toFixed(2) ?? '-'}</TableCell>
                   {/* <TableCell align="right">{stock.dividend_yield?.toFixed(2)}</TableCell>

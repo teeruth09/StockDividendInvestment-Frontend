@@ -52,3 +52,19 @@ export interface Prediction {
   model_version?: string | null;
   prediction_horizon_days?: number | null;
 }
+
+//stock api type
+export type StockSummaryItem = {
+  from: string; // ISO date string
+  to: string;
+  startClose: number;
+  endClose: number;
+  percentChange: number;
+};
+
+export type StockSummary = {
+  symbol: string;
+  name: string;
+  latestPrice: number;
+  summary: Record<'1D' | '5D' | '1M' | '3M' | '6M' | '1Y' | '3Y' | '5Y', StockSummaryItem>;
+};

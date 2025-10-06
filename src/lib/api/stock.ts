@@ -1,4 +1,4 @@
-import { Stock } from "@/types/stock";
+import { Stock, StockSummary } from "@/types/stock";
 
 // export async function getStockListApi(params?: { search?: string; sector?: string }) {
 //     const query = new URLSearchParams();
@@ -98,7 +98,7 @@ export async function getStockPricesApi(
 // ข้อมูลราคาหุ้นสำหรับ chart (interval = '1D' | '5D' | '1M' | ...)
 export async function getStockChartApi(
   symbol: string,
-  opts?: { interval?: '1D' | '5D' | '1M' | '3M' | '6M' | '1Y' | '3Y' }
+  opts?: { interval?: '1D' | '5D' | '1M' | '3M' | '6M' | '1Y' | '3Y' | '5Y' }
 ) {
   const interval = opts?.interval || '1D';
   const url = new URL(`${process.env.NEXT_PUBLIC_API_URL}/stock/${symbol}/prices/chart`);
@@ -133,4 +133,49 @@ export async function getStockChartApi(
     ...d,
     price_date: new Date(d.price_date)
   }));
+}
+
+export async function getStockSummaryApi(
+  symbol: string,
+): Promise<StockSummary>{
+  const url = new URL(`${process.env.NEXT_PUBLIC_API_URL}/stock/${symbol}/summary`);
+
+  const res = await fetch(url.toString(), {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+    cache: "no-store", 
+  });
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.message || "Failed to fetch stock summary percent price data");
+  }
+
+  const data: StockSummary = await res.json();
+
+  // ตรวจสอบ latestPrice ให้แน่ใจเป็น number
+  const latestPrice =
+    typeof data.latestPrice === "number"
+      ? data.latestPrice
+      : data.latestPrice != null
+      ? Number(data.latestPrice)
+      : 0;
+
+  // แปลง from/to เป็น Date object เพื่อใช้ chart.js หรืออื่น ๆ
+  const summaryWithDates: StockSummary = {
+    symbol: data.symbol,
+    name: data.name,
+    latestPrice,
+    summary: Object.fromEntries(
+      Object.entries(data.summary).map(([key, value]) => [
+        key,
+        {
+          ...value,
+          from: new Date(value.from),
+          to: new Date(value.to),
+        },
+      ])
+    ) as StockSummary['summary'],
+  };
+  return summaryWithDates;
 }
