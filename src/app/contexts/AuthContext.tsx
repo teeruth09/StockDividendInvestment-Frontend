@@ -115,7 +115,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   try {
     const decoded = jwtDecode<JwtPayload>(token);
     return {
-        username: decoded.username
+        username: decoded.username,
+        user_id: decoded.sub,
     }
   } catch {
     return null;

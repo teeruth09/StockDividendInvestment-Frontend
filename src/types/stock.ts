@@ -62,9 +62,11 @@ export type StockSummaryItem = {
   percentChange: number;
 };
 
+type Timeframe = "1D" | "5D" | "1M" | "3M" | "6M" | "1Y" | "3Y" | "5Y";
+
 export type StockSummary = {
   symbol: string;
   name: string;
   latestPrice: number;
-  summary: Record<'1D' | '5D' | '1M' | '3M' | '6M' | '1Y' | '3Y' | '5Y', StockSummaryItem>;
+  summary: Partial<Record<Timeframe, StockSummaryItem>>;
 };

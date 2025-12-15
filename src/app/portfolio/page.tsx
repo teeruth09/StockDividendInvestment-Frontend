@@ -114,7 +114,7 @@ export default function PortfolioPage() {
       {/* Summary Cards */}
       <Grid container spacing={2} mb={3}>
         {summaryCards.map((card, idx) => (
-          <Grid item xs={12} md={3} key={idx}>
+          <Grid size={{xs:12,md:3}} key={idx}>
             <Paper sx={{ p: 2, textAlign: 'center'}}>
               <Typography variant="h6">{card.title}</Typography>
               <Typography variant="h5" fontWeight="bold">{card.value}</Typography>
@@ -126,13 +126,13 @@ export default function PortfolioPage() {
       <Grid container spacing={2} sx={{ width:'100%'}}>
       {/* Charts */}
       <Grid container spacing={3} mb={4}>
-        <Grid item xs={12} md={8}>
+        <Grid size={{xs:6,md:8}}>  
           <Paper sx={{ p: 10 }}>
             <Typography variant="h6" gutterBottom>มูลค่าพอร์ตโฟลิโอ</Typography>
             <Line data={lineChartData} width={600} height={300}  />
           </Paper>
         </Grid>
-        <Grid item xs={12} md={4} sx={{}}>
+        <Grid size={{xs:6,md:4}}>
           <Paper sx={{ p: 2 }}>
             <Typography variant="h6" gutterBottom>การกระจายการลงทุน</Typography>
 

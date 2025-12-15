@@ -228,7 +228,7 @@ const InvestmentProfileUI: React.FC = () => {
 
       {/* Main Grid */}
       <Grid container spacing={3}>
-        <Grid item xs={12} md={7}>
+        <Grid size={{xs:6, md:7}}>
           <Card sx={{ borderRadius: 2 }}>
             <CardContent sx={{ p: 3 }}>
               {/* Header with Year Select */}
@@ -263,7 +263,7 @@ const InvestmentProfileUI: React.FC = () => {
               {/* Tax Info Grid */}
               <Grid container spacing={2}>
                 {/* Year */}
-                <Grid item xs={6}>
+                <Grid size={{xs:6}}>
                   <Typography variant="body2" color="text.secondary" gutterBottom>
                     ปีภาษี
                   </Typography>
@@ -282,7 +282,7 @@ const InvestmentProfileUI: React.FC = () => {
                 {['annual_income','personal_deduction', 'spouse_deduction', 'child_deduction', 'parent_deduction',
                   'life_insurance_deduction', 'health_insurance_deduction', 'provident_fund_deduction',
                   'retirement_mutual_fund'].map((field) => (
-                  <Grid item xs={6} key={field}>
+                  <Grid size={{xs:6}} key={field}>
                     <Typography variant="body2" color="text.secondary" gutterBottom>
                       {fieldLabels[field]} (บาท)
                     </Typography>
