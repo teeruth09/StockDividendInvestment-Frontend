@@ -11,6 +11,14 @@ import {
   Tabs,
   Tab,
   Divider,
+  CircularProgress,
+  Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Snackbar,
 } from "@mui/material";
 import { Line } from "react-chartjs-2";
 import {
@@ -24,11 +32,15 @@ import {
   ChartData,
 } from "chart.js";
 import { useEffect, useState } from 'react';
-import { getStockChartApi, getStockSummaryApi } from '@/lib/api/stock';
+import { fetchPriceByDate, getStockChartApi, getStockSummaryApi } from '@/lib/api/stock';
 import { StockSummary } from '@/types/stock';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { useAuth } from '@/app/contexts/AuthContext';
+import { createBuyTransactionApi, createSellTransactionApi } from '@/lib/api/transaction';
+import { mapTradeFormDataToPayload } from '@/utils/transaction-mapper';
+import { TradeFormData, TransactionPayload } from '@/types/transaction';
 
 ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, Tooltip, Legend);
 
@@ -36,6 +48,7 @@ type StockChartData = ChartData<'line', number[], string>; // labels เป็�
 
 
 export default function StockDetailPage() {
+    const { user, token } = useAuth();    
     const { symbol } = useParams() as { symbol: string }
         
     // mock data
@@ -52,22 +65,102 @@ export default function StockDetailPage() {
     const [latestPrice, setLatestPrice] = useState<number | null>(null);
     const [stockName, setStockName] = useState<string | null>(null);
     
-
     const [tradeDate, setTradeDate] = useState<Date | null>(new Date());
     const [tradeQty, setTradeQty] = useState<number>(100);
     const [tradePrice, setTradePrice] = useState<number | null>(latestPrice);
-
+    const [tradeMode, setTradeMode] = useState<0 | 1>(0);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [submitError, setSubmitError] = useState<string | null>(null);
+    const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
+    const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
     const handleTimeframeChange = (tf: typeof timeframe) => {
         setTimeframe(tf);
     };
+
+    const handleTabChange = (event: React.SyntheticEvent, newValue: 0 | 1) => {
+        setTradeMode(newValue);
+        // อาจจะต้องการรีเซ็ต State บางตัวเมื่อเปลี่ยนโหมด เช่น tradeQty, tradePrice
+        // setTradeQty(0); 
+    };
+
+    const handleConfirmExecute = async () => {
+        handleConfirmClose();
+        // 1. ตรวจสอบสิทธิ์ (Authentication Check)
+        if (!token || !user?.user_id || !tradeDate || !tradeQty || tradeQty <= 0 || !tradePrice || tradePrice <= 0) {          
+            setSubmitError("ข้อมูลการทำรายการไม่สมบูรณ์ หรือคุณไม่ได้เข้าสู่ระบบ");
+            return;
+        }
+
+        setIsSubmitting(true);
+        setSubmitError(null);
+        setSubmitSuccess(null);
+
+        // 2. สร้าง FormData Object (ตามแนวคิด Trading Form)
+        const formData: TradeFormData = {
+            tradeMode: tradeMode === 0 ? 'BUY' : 'SELL',
+            stockSymbol: stockSymbol,
+            tradeDate: tradeDate,
+            tradeQty: tradeQty,
+            tradePrice: tradePrice,
+            commissionRate: 10.00, // ค่าคงที่ที่ใช้ใน frontend
+            userId: user.user_id,
+            token: token,
+        };
+        console.log(formData)
+        
+        // 3. Mapping และ Validation
+        const payload = mapTradeFormDataToPayload(formData);
+
+        if (!payload) {
+            setIsSubmitting(false);
+            setSubmitError("เกิดข้อผิดพลาดภายใน: ไม่สามารถสร้าง Payload ได้");
+            return;
+        }
+      
+        try {
+            if (formData.tradeMode === 'BUY') {
+                // เราจะส่ง Plain JSON Payload แทน FormData ในการซื้อขายหุ้น (เพราะการส่ง JSON ง่ายกว่าและเป็นมาตรฐานสำหรับ API Transaction)
+                await createBuyTransactionApi(token, payload); 
+                setSubmitSuccess(`ทำรายการซื้อ ${payload.quantity} หุ้น ${stockSymbol} สำเร็จ`);
+            } else {
+                await createSellTransactionApi(token, payload); 
+                setSubmitSuccess(`ทำรายการขาย ${payload.quantity} หุ้น ${stockSymbol} สำเร็จ`);
+            }
+        } catch (error) {
+            if (error instanceof Error) {
+                setSubmitError(error.message);
+            } else {
+                setSubmitError("เกิดข้อผิดพลาดในการทำรายการ");
+            }
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleSnackbarClose = () => {
+        setSubmitError(null);
+        setSubmitSuccess(null);
+    };
+    //Handler สำหรับเปิด/ปิด Dialog
+    const handleConfirmOpen = () => setIsConfirmOpen(true);
+    const handleConfirmClose = () => setIsConfirmOpen(false);
   
     useEffect(() => {
         const fetchSummary = async () => {
-            const data = await getStockSummaryApi(symbol);
-            setSummary(data);
-            setStockName(data.name)
-            setLatestPrice(data.latestPrice)
+            setIsLoading(true); // เริ่ม Loading
+            setError(null);
+            try{
+                const data = await getStockSummaryApi(symbol);
+                setSummary(data);
+                setStockName(data.name)
+                setLatestPrice(data.latestPrice)
+            } catch (err){
+                console.error("Failed to fetch summary:", err);
+                setError("ไม่สามารถดึงข้อมูลสรุปหลักทรัพย์ได้"); // แสดง Error
+            } finally {
+                setIsLoading(false)
+            }
         };
         fetchSummary();
     }, [symbol]);
@@ -107,13 +200,24 @@ export default function StockDetailPage() {
         };
         fetchChartData();
     }, [symbol, timeframe, summary])
+
+
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    if (isLoading) {
+        return <Box sx={{ p: 3, display: 'flex', justifyContent: 'center' }}><CircularProgress /></Box>;
+    }
+
+    if (error) {
+        return <Alert severity="error" sx={{ m: 3 }}>{error}</Alert>;
+    }
     
 
     return (
         <Box sx={{ p: 3 }}>
         <Grid container spacing={2}>
             {/* Left Column */}
-            <Grid item xs={12} sm={12} md={8} lg={9}>
+            <Grid size={{ xs:12, sm:12 ,md:8 ,lg:9 }}>
 
                 <Card sx={{ borderRadius: 2, mb: 2 }}>
                     <CardContent>
@@ -196,7 +300,7 @@ export default function StockDetailPage() {
 
             {/* Extra Info */}
             <Grid container spacing={2}>
-                <Grid item xs={12} md={6}>
+                <Grid size={{xs:12, md:6}}>
                     <Card sx={{ borderRadius: 2, minHeight: 300, minWidth: 500}}>
                         <CardContent>
                         <Typography variant="subtitle1">ข้อมูลหลักทรัพย์</Typography>
@@ -207,7 +311,7 @@ export default function StockDetailPage() {
                         </CardContent>
                     </Card>
                 </Grid>
-                <Grid item xs={12} md={6}>
+                <Grid size={{xs:12, md:6}}>
                     <Card sx={{ borderRadius: 2, minHeight: 300, minWidth: 500}}>
                         <CardContent>
                         <Typography variant="subtitle1">ข้อมูลเงินปันผล</Typography>
@@ -222,10 +326,10 @@ export default function StockDetailPage() {
             </Grid>
 
             {/* Right Column - Trade Box */}
-            <Grid item xs={12} sm={12} md={4} lg={3} sx={{ flexGrow: 1 }}>
+            <Grid size={{xs:12 ,sm:12, md:4 ,lg:3 }} sx={{flexGrow: 1 }}>
                 <Card sx={{ borderRadius: 2, width: "100%", maxWidth: { xs: 360, sm: "100%" } }}>
                     <CardContent>
-                    <Tabs value={0}>
+                    <Tabs value={tradeMode} onChange={handleTabChange} indicatorColor="primary">
                         <Tab label="ซื้อ" />
                         <Tab label="ขาย" />
                     </Tabs>
@@ -240,33 +344,96 @@ export default function StockDetailPage() {
                             label="เลือกวันที่ดำเนินการ"
                             value={tradeDate}
                             onChange={(newDate) => {
-                            setTradeDate(newDate);
-                            if (newDate) fetchPriceByDate(stockSymbol, newDate).then(setTradePrice);
+                                setTradeDate(newDate);
+                                if (newDate) {
+                                fetchPriceByDate(stockSymbol, newDate).then(setTradePrice);
+                                }
                             }}
-                            renderInput={(params) => <TextField fullWidth {...params} />}
+                            slotProps={{
+                                textField: {
+                                fullWidth: true,
+                                },
+                            }}
                         />
                         </LocalizationProvider>
 
                         <TextField fullWidth type="number" label="จำนวนหุ้น" value={tradeQty} onChange={(e) => setTradeQty(Number(e.target.value))} />
                         <TextField
-                        fullWidth
-                        type="number"
-                        label="ราคาต่อหุ้น (บาท)"
-                        value={tradePrice ?? latestPrice ?? ""}
-                        onChange={(e) => setTradePrice(Number(e.target.value))}
-                        InputLabelProps={{ shrink: true }}
+                            fullWidth
+                            type="number"
+                            label="ราคาต่อหุ้น (บาท)"
+                            value={tradePrice ?? latestPrice ?? ""}
+                            onChange={(e) => setTradePrice(Number(e.target.value))}
+                            InputLabelProps={{ shrink: true }}
                         />
 
                         <Typography variant="body2">
-                        มูลค่ารวม: {(tradeQty ?? 0) * (tradePrice ?? latestPrice)} บาท
+                            มูลค่ารวม: {(tradeQty ?? 0) * (tradePrice ?? latestPrice ?? 0)} บาท
                         </Typography>
 
-                        <Button variant="contained" fullWidth>ดำเนินการซื้อ</Button>
+                        <Button 
+                            variant="contained" 
+                            fullWidth
+                            onClick={handleConfirmOpen}
+                            // 💡 ปิดปุ่มหากไม่มี Token หรือมี Error/กำลัง Submitting
+                            disabled={
+                                !token || // ปิดปุ่มหากไม่มี Token
+                                isSubmitting || 
+                                tradePrice === null || 
+                                tradeQty <= 0
+                            }
+                        >
+                            {isSubmitting 
+                                ? <CircularProgress size={24} color="inherit" />
+                                : !token 
+                                ? "เข้าสู่ระบบเพื่อดำเนินการ" // เปลี่ยน Label เมื่อไม่มี Token
+                                : tradeMode === 0 ? "ดำเนินการซื้อ" : "ดำเนินการขาย"} 
+                        </Button>
                     </Box>
                     </CardContent>
                 </Card>
             </Grid>
         </Grid>
+        {/* 1. Confirmation Dialog */}
+        <Dialog open={isConfirmOpen} onClose={handleConfirmClose}>
+            <DialogTitle>{"ยืนยันการทำรายการ"}</DialogTitle>
+            <DialogContent>
+                <DialogContentText>
+                    คุณต้องการ {tradeMode === 0 ? 'ซื้อ' : 'ขาย'} หุ้น {stockSymbol} จำนวน {tradeQty} หุ้น 
+                    ที่ราคา {tradePrice?.toFixed(2) ?? '-'} บาท รวมมูลค่า {(tradeQty ?? 0) * (tradePrice ?? latestPrice ?? 0)} บาท ใช่หรือไม่?
+                </DialogContentText>
+            </DialogContent>
+            <DialogActions>
+                <Button onClick={handleConfirmClose} color="primary">
+                    ยกเลิก
+                </Button>
+                <Button 
+                    onClick={handleConfirmExecute} // 💡 เรียกฟังก์ชันทำรายการเมื่อตกลง
+                    color="primary" 
+                    variant="contained"
+                    autoFocus
+                >
+                    ตกลง
+                </Button>
+            </DialogActions>
+        </Dialog>
+
+
+        {/* 2. Snackbar สำหรับ Error และ Success */}
+        <Snackbar
+            open={!!submitError || !!submitSuccess}
+            autoHideDuration={4000}
+            onClose={handleSnackbarClose}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        >
+            <Alert 
+                onClose={handleSnackbarClose} 
+                severity={submitSuccess ? "success" : "error"} 
+                sx={{ width: '100%' }}
+            >
+                {submitSuccess || submitError}
+            </Alert>
+        </Snackbar>
         </Box>
     );
 }

@@ -1,6 +1,6 @@
 // TaxCalculatorPage.tsx
 "use client";
-import React, { useMemo, useState } from "react";
+import React, { JSX, useMemo, useState } from "react";
 import {
   Box,
   Grid,
@@ -226,7 +226,7 @@ export default function TaxCalculatorPage(): JSX.Element {
         <CardContent>
           <Typography variant="h6" gutterBottom>รายได้</Typography>
           <Grid container spacing={2}>
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 fullWidth
                 label="เงินเดือน/รายได้อื่น"
@@ -235,7 +235,7 @@ export default function TaxCalculatorPage(): JSX.Element {
                 onChange={(e) => setSalary(Number(e.target.value || 0))}
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 fullWidth
                 label="โบนัส"
@@ -244,7 +244,7 @@ export default function TaxCalculatorPage(): JSX.Element {
                 onChange={(e) => setBonus(Number(e.target.value || 0))}
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 fullWidth
                 label="เงินปันผล"
@@ -253,7 +253,7 @@ export default function TaxCalculatorPage(): JSX.Element {
                 onChange={(e) => setDividend(Number(e.target.value || 0))}
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 fullWidth
                 label="รายได้อื่น ๆ"
@@ -272,7 +272,7 @@ export default function TaxCalculatorPage(): JSX.Element {
         <CardContent>
           <Typography variant="h6" gutterBottom>ลดหย่อนส่วนตัวและครอบครัว</Typography>
           <Grid container spacing={2}>
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 fullWidth
                 label="ลดหย่อนตัวเอง"
@@ -281,7 +281,7 @@ export default function TaxCalculatorPage(): JSX.Element {
                 onChange={(e) => onDeductionsChange("personal")(e.target.value)}
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 fullWidth
                 label="คู่สมรส"
@@ -290,7 +290,7 @@ export default function TaxCalculatorPage(): JSX.Element {
                 onChange={(e) => onDeductionsChange("spouse")(e.target.value)}
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 fullWidth
                 label="บุตร"
@@ -299,7 +299,7 @@ export default function TaxCalculatorPage(): JSX.Element {
                 onChange={(e) => onDeductionsChange("child")(e.target.value)}
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 fullWidth
                 label="พ่อแม่"
@@ -318,7 +318,7 @@ export default function TaxCalculatorPage(): JSX.Element {
         <CardContent>
           <Typography variant="h6" gutterBottom>กองทุนและประกัน</Typography>
           <Grid container spacing={2}>
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 fullWidth
                 label="ประกันสังคม (สูงสุด 9,000)"
@@ -327,7 +327,7 @@ export default function TaxCalculatorPage(): JSX.Element {
                 onChange={(e) => onDeductionsChange("social")(e.target.value)}
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 fullWidth
                 label="กองทุนสำรองเลี้ยงชีพ (PVD)"
@@ -336,7 +336,7 @@ export default function TaxCalculatorPage(): JSX.Element {
                 onChange={(e) => onDeductionsChange("pvd")(e.target.value)}
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 fullWidth
                 label="กองทุน RMF"
@@ -345,7 +345,7 @@ export default function TaxCalculatorPage(): JSX.Element {
                 onChange={(e) => onDeductionsChange("rmf")(e.target.value)}
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 fullWidth
                 label="กองทุน SSF"
@@ -354,7 +354,7 @@ export default function TaxCalculatorPage(): JSX.Element {
                 onChange={(e) => onDeductionsChange("ssf")(e.target.value)}
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 fullWidth
                 label="เบี้ยประกันชีวิต"
@@ -363,7 +363,7 @@ export default function TaxCalculatorPage(): JSX.Element {
                 onChange={(e) => onDeductionsChange("lifeInsurance")(e.target.value)}
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 fullWidth
                 label="เบี้ยประกันสุขภาพบิดามารดา"
@@ -382,7 +382,7 @@ export default function TaxCalculatorPage(): JSX.Element {
         <CardContent>
           <Typography variant="h6" gutterBottom>ลดหย่อนอื่น ๆ</Typography>
           <Grid container spacing={2}>
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 fullWidth
                 label="ดอกเบี้ยบ้าน"
@@ -391,7 +391,7 @@ export default function TaxCalculatorPage(): JSX.Element {
                 onChange={(e) => onDeductionsChange("mortgageInterest")(e.target.value)}
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 fullWidth
                 label="บริจาค"

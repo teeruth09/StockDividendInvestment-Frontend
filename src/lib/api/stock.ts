@@ -1,4 +1,5 @@
 import { Stock, StockSummary } from "@/types/stock";
+import { formatDate } from "../helpers/format";
 
 // export async function getStockListApi(params?: { search?: string; sector?: string }) {
 //     const query = new URLSearchParams();
@@ -178,4 +179,33 @@ export async function getStockSummaryApi(
     ) as StockSummary['summary'],
   };
   return summaryWithDates;
+}
+
+export async function fetchPriceByDate(
+    symbol: string, 
+    date: Date 
+): Promise<number> {
+    
+  const dateString = formatDate(date); 
+  
+  //URL: /stock/ADVANC/price-by-date?date=2025-10-25
+  const url = new URL(`${process.env.NEXT_PUBLIC_API_URL}/stock/${symbol}/price-by-date`);
+  url.searchParams.append("date", dateString);
+
+  const res = await fetch(url.toString(), {
+      method: "GET",
+      headers: {
+          "Content-Type": "application/json",
+      },
+      cache: "no-store", 
+  });
+
+  if (!res.ok) {
+      const error = await res.json().catch(() => ({}));
+      throw new Error(error.message || `Failed to fetch price for ${symbol} on ${dateString}`);
+  }
+
+  const data: { price: number } = await res.json();
+  
+  return data.price; 
 }
