@@ -39,3 +39,8 @@ export enum StockSector {
   ETRON = "ชิ้นส่วนอิเล็กทรอนิกส์",
   ICT = "เทคโนโลยีสารสนเทศและการสื่อสาร",
 }
+
+export enum TransactionType {
+  BUY = 'BUY',
+  SELL = 'SELL',
+}

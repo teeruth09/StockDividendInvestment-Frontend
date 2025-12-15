@@ -1,3 +1,4 @@
+import { TransactionType } from './enum';
 export interface BuyTransactionData {
     userId: string; // ควรถูกกำหนดใน Backend จาก Token แทน แต่ใช้ตามตัวอย่างเพื่อให้ง่ายต่อการทดสอบ
     stockSymbol: string;
@@ -36,4 +37,34 @@ export interface TradeFormData {
     // ข้อมูลสำหรับ Context/Auth
     userId: string | undefined;
     token: string | undefined;
+}
+
+//Interface สำหรับข้อมูลที่ได้รับจาก Backend (Snake Case)
+export interface RawTransactionData {
+  transaction_id: string; // เพิ่ม underscore
+  user_id: string;
+  stock_symbol: string;
+  transaction_date: string; // มักเป็น String ISO 
+  transaction_type: string; // 'BUY' | 'SELL'
+  quantity: number;
+  price_per_share: number;
+  total_amount: number;
+  commission: number;
+  created_at: string; // มักเป็น String ISO
+}
+export interface Transaction {
+  transactionId: string;
+  userId: string;
+  stockSymbol: string;
+  transactionDate: Date;
+  transactionType: TransactionType; // ใช้ Enum
+  quantity: number;
+  pricePerShare: number;
+  totalAmount: number;
+  commission: number;
+  createdAt: Date;
+}
+export interface TransactionHistoryFilters {
+    symbol?: string;
+    type?: string; // 'BUY' | 'SELL'
 }

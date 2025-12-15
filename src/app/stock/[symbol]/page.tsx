@@ -73,6 +73,25 @@ export default function StockDetailPage() {
     const [submitError, setSubmitError] = useState<string | null>(null);
     const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+    
+    // 1. กำหนดอัตรา Commission และ VAT
+    const commissionRate = 0.0015; // 0.15%
+    const vatRate = 0.07; // 7% (ของค่า Commission)
+    // 2. คำนวณมูลค่าเริ่มต้น (Subtotal)
+    const subtotal = (tradeQty ?? 0) * (tradePrice ?? latestPrice ?? 0);
+    // 3. คำนวณค่า Commission
+    let brokerCommission = subtotal * commissionRate;
+    // 4. ตรวจสอบค่าธรรมเนียมขั้นต่ำ (Optional, แต่ทำให้สมจริงขึ้น)
+    const minCommission = 0.0; // หากไม่ต้องการขั้นต่ำ ให้ใช้ 0.0
+    if (brokerCommission < minCommission && brokerCommission > 0) {
+        brokerCommission = minCommission;
+    }
+    // 5. คำนวณ VAT
+    const vat = brokerCommission * vatRate;
+    // 6. คำนวณค่าธรรมเนียมรวมทั้งหมด
+    const totalFees = brokerCommission + vat;
+    // 7. คำนวณมูลค่ารวมที่ต้องจ่าย (Total Amount)
+    const totalAmount = subtotal + totalFees;
 
     const handleTimeframeChange = (tf: typeof timeframe) => {
         setTimeframe(tf);
@@ -103,7 +122,7 @@ export default function StockDetailPage() {
             tradeDate: tradeDate,
             tradeQty: tradeQty,
             tradePrice: tradePrice,
-            commissionRate: 10.00, // ค่าคงที่ที่ใช้ใน frontend
+            commissionRate: totalFees, 
             userId: user.user_id,
             token: token,
         };
@@ -200,6 +219,12 @@ export default function StockDetailPage() {
         };
         fetchChartData();
     }, [symbol, timeframe, summary])
+
+    useEffect(() => {
+    if (latestPrice !== null) {
+        setTradePrice(latestPrice);
+    }
+    }, [latestPrice]);
 
 
     const [isLoading, setIsLoading] = useState(true);
@@ -364,12 +389,38 @@ export default function StockDetailPage() {
                             label="ราคาต่อหุ้น (บาท)"
                             value={tradePrice ?? latestPrice ?? ""}
                             onChange={(e) => setTradePrice(Number(e.target.value))}
+                            disabled={true}
                             InputLabelProps={{ shrink: true }}
                         />
+                        <Box sx={{ mt: 2, display: "flex", flexDirection: "column", gap: 0.5, borderTop: '1px solid #eee', pt: 1 }}>
+                            {/* 1. มูลค่าหุ้น (Subtotal) */}
+                            <Box display="flex" justifyContent="space-between">
+                                <Typography variant="body2" color="text.secondary">มูลค่าหุ้น ({stockSymbol})</Typography>
+                                <Typography variant="body2">{subtotal.toFixed(2)} บาท</Typography>
+                            </Box>
 
-                        <Typography variant="body2">
-                            มูลค่ารวม: {(tradeQty ?? 0) * (tradePrice ?? latestPrice ?? 0)} บาท
-                        </Typography>
+                            {/* 2. ค่าธรรมเนียมโบรกเกอร์ */}
+                            <Box display="flex" justifyContent="space-between">
+                                <Typography variant="body2" color="text.secondary">ค่า Commission ({Math.round(commissionRate * 10000) / 100}%)</Typography>
+                                <Typography variant="body2">{brokerCommission.toFixed(2)} บาท</Typography>
+                            </Box>
+
+                            {/* 3. VAT */}
+                            <Box display="flex" justifyContent="space-between">
+                                <Typography variant="body2" color="text.secondary">VAT (7% ของ Commission)</Typography>
+                                <Typography variant="body2">{vat.toFixed(2)} บาท</Typography>
+                            </Box>
+
+                            <Divider sx={{ my: 1 }} />
+
+                            {/* 4. มูลค่ารวมที่ต้องชำระ (Total Amount) */}
+                            <Box display="flex" justifyContent="space-between">
+                                <Typography variant="subtitle1" fontWeight="bold">มูลค่ารวมที่ต้องชำระ</Typography>
+                                <Typography variant="h6" color="primary" fontWeight="bold">
+                                    {totalAmount.toFixed(2)} บาท
+                                </Typography>
+                            </Box>
+                        </Box>
 
                         <Button 
                             variant="contained" 
