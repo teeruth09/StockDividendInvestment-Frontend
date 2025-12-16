@@ -66,14 +66,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setError(null);
     
     try {
-      const { access_token } = await loginApi(credentials);
-      localStorage.setItem('x-access-token', access_token);
-      setToken(access_token); // หรือ jwtDecode(access_token)
-      const userInfo = decodeToken(access_token);
+      const { accessToken } = await loginApi(credentials);
+      localStorage.setItem('x-access-token', accessToken);
+      setToken(accessToken); // หรือ jwtDecode(access_token)
+      const userInfo = decodeToken(accessToken);
       if (userInfo) setUser(userInfo);
       
-    } catch (err: any) {
-      setError(err.message || 'เข้าสู่ระบบไม่สำเร็จ');
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      }
+      else {
+        setError("เข้าสู่ระบบไม่สำเร็จ");
+      }
       throw err; // ส่งต่อ error ให้ component จัดการ
     } finally {
       setIsLoading(false);
@@ -85,14 +90,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setError(null);
     
     try {
-      const { access_token } = await registerApi(credentials);
-      localStorage.setItem('x-access-token', access_token);
-      setToken(access_token); // หรือ jwtDecode(access_token)
-      const userInfo = decodeToken(access_token);
+      const { accessToken } = await registerApi(credentials);
+      localStorage.setItem('x-access-token', accessToken);
+      setToken(accessToken); // หรือ jwtDecode(access_token)
+      const userInfo = decodeToken(accessToken);
       if (userInfo) setUser(userInfo);
       
-    } catch (err: any) {
-      setError(err.message || 'เข้าสู่ระบบไม่สำเร็จ');
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      }
+      else {
+        setError("เข้าสู่ระบบไม่สำเร็จ");
+      }
+      
       throw err; // ส่งต่อ error ให้ component จัดการ
     } finally {
       setIsLoading(false);

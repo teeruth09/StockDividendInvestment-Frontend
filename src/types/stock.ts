@@ -1,12 +1,26 @@
 import { StockSector } from "./enum";
-export interface Stock {
+
+export interface RawStock {
   stock_symbol: string;
   name: string;
   sector: StockSector;
   corporate_tax_rate: number;
   boi_support: boolean;
-  created_at: Date;
-  updated_at: Date;
+  created_at: string;
+  updated_at: string; 
+
+  historicalPrices?: RawHistoricalPriceData[];
+  dividends?: RawDividendData[];           
+  // predictions ไม่มี Raw Type ที่ให้มา
+}
+export interface Stock {
+  stockSymbol: string;
+  name: string;
+  sector: StockSector;
+  corporateTaxRate: number;
+  boiSupport: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 
   historicalPrices?: HistoricalPrice[];
   dividends?: Dividend[];           

@@ -24,22 +24,26 @@ import { StockSector } from "@/types/enum";
 import Link from "next/link";
 
 type Order = 'asc' | 'desc';
+type OrderBy = keyof Stock;
 
 // Comparator function
 function descendingComparator<T>(a: T, b: T, orderBy: keyof T) {
-  if (b[orderBy] < a[orderBy]) return -1;
-  if (b[orderBy] > a[orderBy]) return 1;
+  const aValue = a[orderBy];
+  const bValue = b[orderBy];
+  if (bValue < aValue) return -1;
+  if (bValue > aValue) return 1;
   return 0;
 }
 
-function getComparator<Key extends keyof any>(
+function getComparator<Key extends keyof Stock>(
   order: Order,
-  orderBy: Key,
-): (a: { [key in Key]: number | string }, b: { [key in Key]: number | string }) => number {
+  orderBy: Key
+): (a: Stock, b: Stock) => number {
   return order === 'desc'
     ? (a, b) => descendingComparator(a, b, orderBy)
     : (a, b) => -descendingComparator(a, b, orderBy);
 }
+
 
 export default function StockTable() {
   const [stocksData, setStocksData] = useState<Stock[]>([]);
@@ -47,9 +51,9 @@ export default function StockTable() {
 
   // filter state
   const [search, setSearch] = useState("");
-  const [sector, setSector] = useState<StockSector>("");
+  const [sector, setSector] = useState<StockSector | string>("");
   const [order, setOrder] = useState<Order>('asc');
-  const [orderBy, setOrderBy] = useState<keyof Stock>('stock_symbol'); // คอลัมน์ที่ sort
+  const [orderBy, setOrderBy] = useState<keyof Stock>('stockSymbol'); // คอลัมน์ที่ sort
 
   // โหลดข้อมูลจาก API
   const fetchData = async () => {
@@ -124,9 +128,9 @@ export default function StockTable() {
             <TableRow>
               <TableCell>
                 <TableSortLabel
-                  active={orderBy === 'stock_symbol'}
-                  direction={orderBy === 'stock_symbol' ? order : 'asc'}
-                  onClick={() => handleRequestSort('stock_symbol')}
+                  active={orderBy === 'stockSymbol'}
+                  direction={orderBy === 'stockSymbol' ? order : 'asc'}
+                  onClick={() => handleRequestSort('stockSymbol')}
                 >
                   ชื่อหุ้น
                 </TableSortLabel>
@@ -143,13 +147,7 @@ export default function StockTable() {
               </TableCell>
 
               <TableCell align="right">
-                <TableSortLabel
-                  active={orderBy === 'current_price'}
-                  direction={orderBy === 'current_price' ? order : 'asc'}
-                  onClick={() => handleRequestSort('current_price')}
-                >
                   ราคาปัจจุบัน
-                </TableSortLabel>
               </TableCell>
 
               {/* <TableCell align="right">
@@ -173,23 +171,23 @@ export default function StockTable() {
               </TableCell> */}
 
               <TableCell>
-                <TableSortLabel
+                {/* <TableSortLabel
                   active={orderBy === 'xd_date'}
                   direction={orderBy === 'xd_date' ? order : 'asc'}
                   onClick={() => handleRequestSort('xd_date')}
                 >
+                </TableSortLabel> */}
                   วันที่ XD
-                </TableSortLabel>
               </TableCell>
 
               <TableCell align="right">
-                <TableSortLabel
+                {/* <TableSortLabel
                   active={orderBy === 'dividend_per_share'}
                   direction={orderBy === 'dividend_per_share' ? order : 'asc'}
                   onClick={() => handleRequestSort('dividend_per_share')}
                 >
-                  เงินปันผล (บาท/หุ้น)
-                </TableSortLabel>
+                </TableSortLabel> */}
+                เงินปันผล (บาท/หุ้น)
               </TableCell>
             </TableRow>
           </TableHead>
@@ -197,29 +195,29 @@ export default function StockTable() {
           <TableBody>
             {!loading &&
               sortedStocks.map((stock) => (
-                <TableRow key={stock.stock_symbol}>
+                <TableRow key={stock.stockSymbol}>
                   <TableCell>
                     <Link
-                      href={`/stock/${stock.stock_symbol}`}
+                      href={`/stock/${stock.stockSymbol}`}
                       style={{
                         color: "#1976d2",
                         textDecoration: "none",
                         fontWeight: 600,
                       }}
                     >
-                      {stock.stock_symbol}
+                      {stock.stockSymbol}
                     </Link>
                     </TableCell>
-                  <TableCell>{StockSector[stock.sector as keyof typeof StockSector]}</TableCell>
-                  <TableCell align="right">{stock.historicalPrices?.[0]?.close_price?.toFixed(2) ?? '-'}</TableCell>
+                  <TableCell>{StockSector[stock.sector as unknown as keyof typeof StockSector]}</TableCell>
+                  <TableCell align="right">{stock.historicalPrices?.[0]?.closePrice?.toFixed(2) ?? '-'}</TableCell>
                   {/* <TableCell align="right">{stock.dividend_yield?.toFixed(2)}</TableCell>
                   <TableCell align="right">{stock.dividend_times}</TableCell> */}
                   <TableCell>
-                    {stock.dividends?.[0]?.ex_dividend_date
-                        ? new Date(stock.dividends[0].ex_dividend_date).toLocaleDateString()
+                    {stock.dividends?.[0]?.exDividendDate
+                        ? new Date(stock.dividends[0].exDividendDate).toLocaleDateString()
                         : '-'}
                   </TableCell>
-                  <TableCell align="right">{stock.dividends?.[0]?.dividend_per_share?.toFixed(2)}</TableCell>
+                  <TableCell align="right">{stock.dividends?.[0]?.dividendPerShare?.toFixed(2)}</TableCell>
                 </TableRow>
               ))}
 

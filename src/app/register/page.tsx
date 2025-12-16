@@ -42,11 +42,13 @@ export default function RegisterPage() {
         console.log('Register attempt:', { username, email, password, acceptTerms })
         try {
             localStorage.removeItem('x-access-token');
-            const {access_token} = await registerApi({ username, email, password });
-            localStorage.setItem('x-access-token', access_token);
+            const {accessToken} = await registerApi({ username, email, password });
+            localStorage.setItem('x-access-token', accessToken);
             router.push('/');
-        } catch (err:any) {
-            setError(err.message);
+        } catch (err:unknown) {
+            if (err instanceof Error) {
+                setError(err.message);
+            }
         }
     }
 

@@ -1,4 +1,4 @@
-import { Dividend, HistoricalPrice, RawDividendData, RawHistoricalPriceData } from "@/types/stock";
+import { Dividend, HistoricalPrice, RawDividendData, RawHistoricalPriceData, RawStock, Stock } from "@/types/stock";
 
 /**
  * แปลง Raw Historical Price Data (Snake Case) ให้เป็น HistoricalPrice (Camel Case)
@@ -52,4 +52,42 @@ export const mapRawDividendsToDividends = (
     rawArray: RawDividendData[]
 ): Dividend[] => {
     return rawArray.map(mapRawDividendToDividend);
+};
+
+/**
+ * แปลง Raw Stock Data (Snake Case) ให้เป็น Stock (Camel Case)
+ */
+export const mapRawStockToStock = (raw: RawStock): Stock => {
+    
+    const historicalPrices = raw.historicalPrices 
+        ? mapRawPricesToHistoricalPrices(raw.historicalPrices) 
+        : undefined;
+
+    // TODO: เพิ่ม logic สำหรับ dividends และ predictions ถ้ามี
+    const dividends = raw.dividends
+        ? mapRawDividendsToDividends(raw.dividends)
+        : undefined;
+    
+    return {
+        stockSymbol: raw.stock_symbol,
+        name: raw.name,
+        sector: raw.sector,
+        corporateTaxRate: raw.corporate_tax_rate,
+        boiSupport: raw.boi_support,
+        
+        // แปลง Date String เป็น Date Object
+        createdAt: new Date(raw.created_at),
+        updatedAt: new Date(raw.updated_at),
+
+        // Array ที่ถูกแปลงแล้ว
+        historicalPrices: historicalPrices,
+        dividends: dividends,
+        // predictions: raw.predictions, // ถ้า predictions ไม่มี map ก็ใช้ raw ได้
+    };
+};
+
+export const mapRawStocksToStocks = (
+    rawArray: RawStock[]
+): Stock[] => {
+    return rawArray.map(mapRawStockToStock);
 };

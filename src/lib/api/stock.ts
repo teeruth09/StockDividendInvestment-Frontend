@@ -1,7 +1,8 @@
-import { Stock, StockSummary } from "@/types/stock";
+import { RawStock, Stock, StockSummary } from "@/types/stock";
 import { formatDate } from "../helpers/format";
 import { RawHistoricalPriceData, HistoricalPrice } from "@/types/stock"; 
 import { mapRawPricesToHistoricalPrices } from "@/utils/stock-mapper";
+import { mapRawStocksToStocks } from "@/utils/stock-mapper";
 
 export async function getStockListApi(params?: { search?: string; sector?: string }) {
   const query = new URLSearchParams();
@@ -21,7 +22,11 @@ export async function getStockListApi(params?: { search?: string; sector?: strin
     const error = await res.json().catch(() => ({}));
     throw new Error(error.message || "Failed to fetch stock list");
   }
-  return res.json();
+  // 1. รับ Raw Data (Array ของ Snake Case)
+  const rawData: RawStock[] = await res.json();
+
+  // 2. เรียกใช้ Mapper เพื่อแปลง Array เป็น Camel Case
+  return mapRawStocksToStocks(rawData);
 }
 
 // ข้อมูลหุ้น (filter by year, from, to)
