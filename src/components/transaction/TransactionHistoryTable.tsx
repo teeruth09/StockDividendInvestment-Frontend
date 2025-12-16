@@ -25,6 +25,7 @@ import { getTransactionHistoryApi } from "@/lib/api/transaction";
 import { Transaction } from "@/types/transaction"; 
 import Link from "next/link";
 import { useAuth } from "@/app/contexts/AuthContext";
+import  FormattedNumberDisplay from '../FormattedNumberDisplay';
 
 
 type Order = 'asc' | 'desc';
@@ -157,7 +158,6 @@ export default function TransactionHistoryTable() {
         <Table>
           <TableHead>
             <TableRow>
-              {/* 💡 เพิ่ม Sorting Header */}
               {(['createdAt', 'stockSymbol', 'transactionType', 'quantity', 'pricePerShare', 'totalAmount'] as const).map((headCell) => (
                 <TableCell key={headCell} align={['quantity', 'pricePerShare', 'totalAmount'].includes(headCell) ? 'right' : 'left'}>
                   <TableSortLabel
@@ -202,22 +202,35 @@ export default function TransactionHistoryTable() {
                 </TableCell>
                 
                 {/* 4. จำนวนหุ้น */}
-                <TableCell align="right">{tx.quantity.toLocaleString()}</TableCell>
+                <TableCell align="right">
+                  <FormattedNumberDisplay 
+                    value={tx.quantity ?? '-'} 
+                    decimalScale={2} 
+                  />
+                </TableCell>
                 
                 {/* 5. ราคาต่อหุ้น */}
-                <TableCell align="right">{tx.pricePerShare.toFixed(2)}</TableCell>
+                <TableCell align="right">
+                  <FormattedNumberDisplay 
+                    value={tx.pricePerShare ?? '-'} 
+                    decimalScale={2} 
+                  />
+                </TableCell>
                 
                 {/* 6. มูลค่ารวม */}
                 <TableCell align="right">
                     <Typography fontWeight="bold">
-                        {tx.totalAmount.toFixed(2)}
+                      <FormattedNumberDisplay 
+                          value={tx.totalAmount ?? '-'} 
+                          decimalScale={2} 
+                      />
                     </Typography>
                 </TableCell>
                 
                 {/* 7. รายละเอียด (Link) */}
                 <TableCell>
                     <Link href={`/transaction/${tx.transactionId}`}>
-                        <Button size="small" variant="outlined">ดู</Button>
+                      <Button size="small" variant="outlined">ดู</Button>
                     </Link>
                 </TableCell>
               </TableRow>

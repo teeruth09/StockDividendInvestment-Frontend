@@ -1,26 +1,8 @@
 import { Stock, StockSummary } from "@/types/stock";
 import { formatDate } from "../helpers/format";
+import { RawHistoricalPriceData, HistoricalPrice } from "@/types/stock"; 
+import { mapRawPricesToHistoricalPrices } from "@/utils/stock-mapper";
 
-// export async function getStockListApi(params?: { search?: string; sector?: string }) {
-//     const query = new URLSearchParams();
-//     const url = new URL(`${process.env.NEXT_PUBLIC_API_URL}/stock/stocks`);
-//     if (params?.sector) url.searchParams.append("sector", params.sector);
-
-//     const res = await fetch(url.toString(), {
-//         method: "GET",
-//         headers: {
-//         "Content-Type": "application/json",
-//         },
-//         cache: "no-store", // ป้องกันไม่ให้ Next.js cache (แล้วแต่ use-case)
-//     });
-
-//     if (!res.ok) {
-//         const error = await res.json().catch(() => ({}));
-//         throw new Error(error.message || "Failed to fetch stocks");
-//     }
-
-//     return res.json();
-// }
 export async function getStockListApi(params?: { search?: string; sector?: string }) {
   const query = new URLSearchParams();
 
@@ -95,6 +77,46 @@ export async function getStockPricesApi(
     return res.json();
 }
 
+export async function getHistoricalPricesApi(
+    symbol: string,
+    fromDate: string,
+    toDate: string
+): Promise<HistoricalPrice[]> { 
+  const url = `${process.env.NEXT_PUBLIC_API_URL}/stock/${symbol}/prices?from=${fromDate}&to=${toDate}`;
+  const res = await fetch(url, {
+      method: 'GET',
+      headers: {
+          'Content-Type': 'application/json',
+      },
+      cache: 'no-store',
+  });
+  if (!res.ok) {
+      const error = await res.json().catch(() => ({}));
+      throw new Error(error.message || `Failed to fetch historical prices for ${symbol}`);
+  }
+  const rawData: RawHistoricalPriceData[] = await res.json(); 
+  
+  return mapRawPricesToHistoricalPrices(rawData);
+}
+
+export async function getLatestPriceApi(
+    symbol: string,
+): Promise<HistoricalPrice | null> {
+  const today = new Date();
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(today.getDate() - 7);
+  
+  // แปลงเป็น YYYY-MM-DD string
+  const fromDate = sevenDaysAgo.toISOString().split('T')[0];
+  const toDate = today.toISOString().split('T')[0];
+  
+  const latestPrices = await getHistoricalPricesApi(symbol, fromDate, toDate);
+  
+  if (latestPrices.length > 0) {
+      return latestPrices[0];
+  }
+  return null;
+}
 
 // ข้อมูลราคาหุ้นสำหรับ chart (interval = '1D' | '5D' | '1M' | ...)
 export async function getStockChartApi(

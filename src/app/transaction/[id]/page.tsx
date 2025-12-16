@@ -6,7 +6,7 @@ import { useParams, notFound } from 'next/navigation';
 import { Box, Typography, Paper, CircularProgress, Alert } from '@mui/material';
 import { Transaction } from '@/types/transaction'; 
 import { useAuth } from '@/app/contexts/AuthContext';
-
+import FormattedNumberDisplay from '@/components/FormattedNumberDisplay';
 
 const DetailItem = ({ label, value }: { label: string, value: React.ReactNode }) => (
     <Box sx={{ mb: 1.5 }}>
@@ -83,8 +83,24 @@ export default function TransactionDetailPage() {
             <Paper elevation={1} sx={{ p: 3, maxWidth: 600 }}>
                 <DetailItem label="Symbol" value={transaction.stockSymbol} />
                 <DetailItem label="ประเภท" value={transaction.transactionType} />
-                <DetailItem label="ราคาต่อหน่วย" value={`${transaction.pricePerShare.toLocaleString()} บาท`} />
-                <DetailItem label="จำนวน" value={`${transaction.quantity.toLocaleString()} หุ้น`} />
+                <DetailItem 
+                    label="ราคาต่อหน่วย" 
+                    value=
+                    {<FormattedNumberDisplay 
+                        value={transaction.pricePerShare ?? '-'} 
+                        decimalScale={2} 
+                        suffix=' บาท'
+                    />}
+                />
+                <DetailItem 
+                    label="จำนวน" 
+                    value=
+                    {<FormattedNumberDisplay 
+                        value={transaction.quantity ?? '-'} 
+                        decimalScale={2} 
+                        suffix=' หุ้น'
+                    />}
+                />
                 <DetailItem 
                     label="วันที่ทำรายการ" 
                     value={transaction.transactionDate.toLocaleDateString('th-TH')} 
@@ -95,8 +111,12 @@ export default function TransactionDetailPage() {
                 />
                 <DetailItem 
                     label="ค่า Commission" 
-                    // ใช้ .toFixed(2) เพื่อแสดง 2 ตำแหน่ง
-                    value={`${transaction.commission.toFixed(2)} บาท`} 
+                    value=
+                    {<FormattedNumberDisplay 
+                        value={transaction.commission ?? '-'} 
+                        decimalScale={2} 
+                        suffix=' บาท'
+                    />}
                 />
                 
                 <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid #eee' }}>
@@ -109,7 +129,11 @@ export default function TransactionDetailPage() {
                                 color="primary" 
                                 sx={{ fontWeight: 'bold' }}
                             >
-                                {transaction.totalAmount.toLocaleString()} บาท
+                                {<FormattedNumberDisplay 
+                                    value={transaction.totalAmount ?? '-'} 
+                                    decimalScale={2} 
+                                    suffix=' บาท'
+                                />}
                             </Typography>
                         } 
                     />
