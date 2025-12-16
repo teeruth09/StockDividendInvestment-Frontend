@@ -45,6 +45,9 @@ import PriceHistoryTable from '@/components/stock/PriceHistoryTable';
 import DividendHistoryTable from '@/components/dividend/DividendHistoryTable';
 import StockInfoTab from '@/components/stock/StockInfoTab';
 import { getLatestDividendApi } from '@/lib/api/dividend';
+import FormattedNumberDisplay from '@/components/FormattedNumberDisplay';
+import NumericInput from '@/components/NumericInput';
+
 
 ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, Tooltip, Legend);
 
@@ -483,32 +486,67 @@ export default function StockDetailPage() {
                         </LocalizationProvider>
 
                         <TextField fullWidth type="number" label="จำนวนหุ้น" value={tradeQty} onChange={(e) => setTradeQty(Number(e.target.value))} />
-                        <TextField
+                        {/* <TextField
                             fullWidth
                             type="number"
                             label="ราคาต่อหุ้น (บาท)"
-                            value={tradePrice ?? latestPrice ?? ""}
+                            //value={tradePrice ?? latestPrice ?? ""}
+                            value= 
+                                {<FormattedNumberDisplay 
+                                    value={tradePrice ?? latestPrice ?? ""}
+                                    decimalScale={2} 
+                                />}
                             onChange={(e) => setTradePrice(Number(e.target.value))}
                             disabled={true}
                             InputLabelProps={{ shrink: true }}
+                        /> */}
+                        <NumericInput
+                            label="ราคาต่อหุ้น (บาท)"
+                            value={tradePrice ?? latestPrice ?? ""} 
+                            onValueChange={(value) => setTradePrice(value === '' ? null : Number(value))}                             
+                            textFieldProps={{ 
+                                fullWidth: true,
+                                disabled: true, //Disaple เพราะเป็นราคาปิดวันนั้นห้ามกำหนดเอง
+                                InputLabelProps: { shrink: true } 
+                            }}
                         />
                         <Box sx={{ mt: 2, display: "flex", flexDirection: "column", gap: 0.5, borderTop: '1px solid #eee', pt: 1 }}>
                             {/* 1. มูลค่าหุ้น (Subtotal) */}
                             <Box display="flex" justifyContent="space-between">
                                 <Typography variant="body2" color="text.secondary">มูลค่าหุ้น ({stockSymbol})</Typography>
-                                <Typography variant="body2">{subtotal.toFixed(2)} บาท</Typography>
+                                <Typography variant="body2">
+                                    <FormattedNumberDisplay 
+                                        value={subtotal ?? '-'} 
+                                        decimalScale={2} 
+                                        suffix=' บาท'
+                                    />
+                                </Typography>
                             </Box>
 
                             {/* 2. ค่าธรรมเนียมโบรกเกอร์ */}
                             <Box display="flex" justifyContent="space-between">
                                 <Typography variant="body2" color="text.secondary">ค่า Commission ({Math.round(commissionRate * 10000) / 100}%)</Typography>
-                                <Typography variant="body2">{brokerCommission.toFixed(2)} บาท</Typography>
+                                <Typography variant="body2">
+                                    <FormattedNumberDisplay 
+                                        value={brokerCommission ?? '-'} 
+                                        decimalScale={2} 
+                                        suffix=' บาท'
+                                    />
+                                </Typography>
                             </Box>
 
                             {/* 3. VAT */}
                             <Box display="flex" justifyContent="space-between">
-                                <Typography variant="body2" color="text.secondary">VAT (7% ของ Commission)</Typography>
-                                <Typography variant="body2">{vat.toFixed(2)} บาท</Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                    VAT (7% ของ Commission)
+                                </Typography>
+                                <Typography variant="body2">
+                                    <FormattedNumberDisplay 
+                                        value={vat ?? '-'} 
+                                        decimalScale={2} 
+                                        suffix=' บาท'
+                                    />
+                                </Typography>
                             </Box>
 
                             <Divider sx={{ my: 1 }} />
@@ -517,7 +555,12 @@ export default function StockDetailPage() {
                             <Box display="flex" justifyContent="space-between">
                                 <Typography variant="subtitle1" fontWeight="bold">มูลค่ารวมที่ต้องชำระ</Typography>
                                 <Typography variant="h6" color="primary" fontWeight="bold">
-                                    {totalAmount.toFixed(2)} บาท
+                                    {/* {totalAmount.toFixed(2)} บาท */}
+                                    <FormattedNumberDisplay 
+                                        value={totalAmount ?? '-'} 
+                                        decimalScale={2} 
+                                        suffix=' บาท'
+                                    />
                                 </Typography>
                             </Box>
                         </Box>
@@ -526,9 +569,8 @@ export default function StockDetailPage() {
                             variant="contained" 
                             fullWidth
                             onClick={handleConfirmOpen}
-                            // 💡 ปิดปุ่มหากไม่มี Token หรือมี Error/กำลัง Submitting
                             disabled={
-                                !token || // ปิดปุ่มหากไม่มี Token
+                                !token ||
                                 isSubmitting || 
                                 tradePrice === null || 
                                 tradeQty <= 0
