@@ -13,29 +13,52 @@ export interface Stock {
   predictions?: Prediction[];           
 }
 
-export interface HistoricalPrice {
+export interface RawHistoricalPriceData {
   stock_symbol: string;
-  price_date: Date;
+  price_date: string;
   open_price: number;
   high_price: number;
   low_price: number;
   close_price: number;
-  price_change?: number | null;
-  percent_change?: number | null;
+  price_change: number;
+  percent_change: number;
   volume_shares: number;
   volume_value: number;
 }
+export interface HistoricalPrice {
+  stockSymbol: string;
+  priceDate: Date;
+  openPrice: number;
+  highPrice: number;
+  lowPrice: number;
+  closePrice: number;
+  priceChange?: number | null;
+  percentChange?: number | null;
+  volumeShares: number;
+  volumeValue: number;
+}
 
-
+export interface RawDividendData {
+    dividend_id: string;
+    stock_symbol: string;
+    announcement_date: string; // มาเป็น String ISO
+    ex_dividend_date: string;   // มาเป็น String ISO
+    record_date: string;
+    payment_date: string;
+    dividend_per_share: number;
+    source_of_dividend?: string | null;
+    calculation_status: string;
+    calculated_at: string;
+}
 export interface Dividend {
-  dividend_id:       string;
-  stock_symbol:      string;
-  announcement_date: Date;
-  ex_dividend_date:  Date;
-  record_date:       Date;
-  payment_date:      Date;
-  dividend_per_share: number;
-  source_of_dividend?: string | null;
+    dividendId: string;
+    stockSymbol: string;
+    announcementDate: Date; // แปลงเป็น Date Object
+    exDividendDate: Date;
+    recordDate: Date;
+    paymentDate: Date;
+    dividendPerShare: number;
+    sourceOfDividend?: string | null;
 }
 
 export interface Prediction {

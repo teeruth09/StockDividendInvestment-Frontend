@@ -32,8 +32,8 @@ import {
   ChartData,
 } from "chart.js";
 import { useEffect, useState } from 'react';
-import { fetchPriceByDate, getStockChartApi, getStockSummaryApi } from '@/lib/api/stock';
-import { StockSummary } from '@/types/stock';
+import { fetchPriceByDate, getLatestPriceApi, getStockChartApi, getStockSummaryApi } from '@/lib/api/stock';
+import { Dividend, HistoricalPrice, StockSummary } from '@/types/stock';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -41,10 +41,16 @@ import { useAuth } from '@/app/contexts/AuthContext';
 import { createBuyTransactionApi, createSellTransactionApi } from '@/lib/api/transaction';
 import { mapTradeFormDataToPayload } from '@/utils/transaction-mapper';
 import { TradeFormData, TransactionPayload } from '@/types/transaction';
+import PriceHistoryTable from '@/components/stock/PriceHistoryTable';
+import DividendHistoryTable from '@/components/dividend/DividendHistoryTable';
+import StockInfoTab from '@/components/stock/StockInfoTab';
+import { getLatestDividendApi } from '@/lib/api/dividend';
 
 ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, Tooltip, Legend);
 
 type StockChartData = ChartData<'line', number[], string>; // labels เป็น string, data เป็น number
+
+type InfoTabKey = 'info' | 'dividend' | 'history' | 'analysis';
 
 
 export default function StockDetailPage() {
@@ -63,6 +69,9 @@ export default function StockDetailPage() {
     });
     const [summary, setSummary] = useState<StockSummary | null>(null);
     const [latestPrice, setLatestPrice] = useState<number | null>(null);
+    const [latestHistoricalPrice, setLatestHistoricalPrice] = useState<HistoricalPrice | null>(null);
+    const [latestDividend, setLatestDividend] = useState<Dividend | null>(null);
+
     const [stockName, setStockName] = useState<string | null>(null);
     
     const [tradeDate, setTradeDate] = useState<Date | null>(new Date());
@@ -73,6 +82,8 @@ export default function StockDetailPage() {
     const [submitError, setSubmitError] = useState<string | null>(null);
     const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+
+    const [activeTab, setActiveTab] = useState<InfoTabKey>('info'); // 'info' คือ ข้อมูลหลักทรัพย์
     
     // 1. กำหนดอัตรา Commission และ VAT
     const commissionRate = 0.0015; // 0.15%
@@ -101,6 +112,10 @@ export default function StockDetailPage() {
         setTradeMode(newValue);
         // อาจจะต้องการรีเซ็ต State บางตัวเมื่อเปลี่ยนโหมด เช่น tradeQty, tradePrice
         // setTradeQty(0); 
+    };
+
+    const handleInfoTabChange = (event: React.SyntheticEvent, newValue: InfoTabKey) => {
+        setActiveTab(newValue);
     };
 
     const handleConfirmExecute = async () => {
@@ -165,23 +180,51 @@ export default function StockDetailPage() {
     const handleConfirmOpen = () => setIsConfirmOpen(true);
     const handleConfirmClose = () => setIsConfirmOpen(false);
   
+    // useEffect(() => {
+    //     const fetchSummary = async () => {
+    //         setIsLoading(true); // เริ่ม Loading
+    //         setError(null);
+    //         try{
+    //             const data = await getStockSummaryApi(symbol);
+    //             setSummary(data);
+    //             setStockName(data.name)
+    //             setLatestPrice(data.latestPrice)
+    //         } catch (err){
+    //             console.error("Failed to fetch summary:", err);
+    //             setError("ไม่สามารถดึงข้อมูลสรุปหลักทรัพย์ได้"); // แสดง Error
+    //         } finally {
+    //             setIsLoading(false)
+    //         }
+    //     };
+    //     fetchSummary();
+    // }, [symbol]);
+
     useEffect(() => {
-        const fetchSummary = async () => {
-            setIsLoading(true); // เริ่ม Loading
+        const fetchData = async () => {
+            setIsLoading(true); 
             setError(null);
-            try{
-                const data = await getStockSummaryApi(symbol);
-                setSummary(data);
-                setStockName(data.name)
-                setLatestPrice(data.latestPrice)
-            } catch (err){
-                console.error("Failed to fetch summary:", err);
-                setError("ไม่สามารถดึงข้อมูลสรุปหลักทรัพย์ได้"); // แสดง Error
+            try {
+                // 1. Fetch Summary (สำหรับข้อมูลที่ไม่ซ้ำซ้อน)
+                const summaryData = await getStockSummaryApi(symbol);
+                setSummary(summaryData);
+                setStockName(summaryData.name);
+                
+                // 2.ดึงราคาล่าสุดทั้งหมด
+                const historicalPriceData = await getLatestPriceApi(symbol);
+                setLatestHistoricalPrice(historicalPriceData);
+                
+                // 3.ดึงข้อมูลปันผลล่าสุด
+                const dividendData = await getLatestDividendApi(symbol);
+                setLatestDividend(dividendData);
+
+            } catch (err) {
+                console.error("Failed to fetch data:", err);
+                setError("ไม่สามารถดึงข้อมูลหลักทรัพย์ได้");
             } finally {
-                setIsLoading(false)
+                setIsLoading(false);
             }
         };
-        fetchSummary();
+        fetchData();
     }, [symbol]);
 
         // เวลาใช้งานเช่นแสดงราคาผลต่างตาม timeframe
@@ -322,9 +365,66 @@ export default function StockDetailPage() {
                     </Box>
                     </CardContent>
                 </Card>
+                {/* 2. INFO TABS AREA */}
+                <Card sx={{ borderRadius: 2 }}>
+                    <Tabs 
+                        value={activeTab} 
+                        onChange={handleInfoTabChange} 
+                        indicatorColor="primary"
+                        textColor="primary"
+                        variant="scrollable"
+                    >
+                        <Tab label="ข้อมูลหลักทรัพย์" value="info" />
+                        <Tab label="ข้อมูลเงินปันผล" value="dividend" />
+                        <Tab label="ราคาย้อนหลัง" value="history" />
+                        <Tab label="บทวิเคราะห์" value="analysis" />
+                    </Tabs>
+
+                    <CardContent>
+                        {/* -------------------- Tab Content -------------------- */}
+                        {/* A. ข้อมูลหลักทรัพย์ (เดิม) */}
+                        {activeTab === 'info' && (
+                            <Box sx={{ minHeight: 300 }}>
+                                <StockInfoTab
+                                    stockSymbol={stockSymbol}
+                                    latestHistoricalPrice={latestHistoricalPrice}
+                                    currentSummary={currentSummary}
+                                    latestDividend={latestDividend}
+                                />
+                            </Box>
+                        )}
+
+                        {/* B. ข้อมูลเงินปันผล (เดิม) */}
+                        {activeTab === 'dividend' && (
+                            <Box sx={{ minHeight: 300 }}>
+                                <DividendHistoryTable stockSymbol={stockSymbol} />
+                            </Box>
+                        )}
+                        
+                        {/* C. ราคาย้อนหลัง (ต้องสร้าง Component ใหม่) */}
+                        {activeTab === 'history' && (
+                            <Box sx={{ minHeight: 300 }}>
+                                <PriceHistoryTable stockSymbol={stockSymbol} />
+                            </Box>
+                        )}
+
+                        {/* D. บทวิเคราะห์ (ต้องสร้าง Component ใหม่) */}
+                        {activeTab === 'analysis' && (
+                            <Box sx={{ minHeight: 300 }}>
+                                <Typography variant="subtitle1">บทวิเคราะห์และข้อมูลทางการเงิน</Typography>
+                                {/* 💡 ที่นี่คุณจะ Render Component <StockAnalysis symbol={stockSymbol} /> */}
+                                <Alert severity="warning" sx={{ mt: 2 }}>
+                                    (Component StockAnalysis จะแสดง P/E, P/BV, ข้อมูลทางการเงิน)
+                                </Alert>
+                            </Box>
+                        )}
+
+                        {/* ---------------------------------------------------- */}
+                    </CardContent>
+                </Card>
 
             {/* Extra Info */}
-            <Grid container spacing={2}>
+            {/* <Grid container spacing={2}>
                 <Grid size={{xs:12, md:6}}>
                     <Card sx={{ borderRadius: 2, minHeight: 300, minWidth: 500}}>
                         <CardContent>
@@ -347,7 +447,7 @@ export default function StockDetailPage() {
                         </CardContent>
                     </Card>
                 </Grid>
-            </Grid>
+            </Grid> */}
             </Grid>
 
             {/* Right Column - Trade Box */}
