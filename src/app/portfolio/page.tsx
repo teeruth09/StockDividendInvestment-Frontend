@@ -27,6 +27,7 @@ import { StockHeldTable } from '@/components/portfolio/StockHeldTable';
 import { useAuth } from '../contexts/AuthContext';
 import { getPortfolioAllocationApi, getPortfolioDetailsApi, getPortfolioHistoryApi, getPortfolioSummaryApi } from '@/lib/api/portfolio';
 import Link from 'next/link';
+import UpcomingDividendsList from '@/components/portfolio/UpComingDividendsList';
 
 ChartJS.register(
   LineElement,
@@ -145,7 +146,8 @@ export default function PortfolioPage() {
       {/* 5. แสดงตารางหุ้น */}
       <StockHeldTable stocks={stocks} />
 
-      {/* ในอนาคตเพิ่ม DividendTable ต่อตรงนี้ */}
+      {/* 6. แสดงตารางหุ้น ที่น่าจะได้รับปันผล */}
+      <UpcomingDividendsList />
     </Box>
   );
 }
