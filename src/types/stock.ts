@@ -1,3 +1,4 @@
+import { Dividend, RawDividendData } from "./dividend";
 import { StockSector } from "./enum";
 
 export interface RawStock {
@@ -52,28 +53,6 @@ export interface HistoricalPrice {
   volumeValue: number;
 }
 
-export interface RawDividendData {
-    dividend_id: string;
-    stock_symbol: string;
-    announcement_date: string; // มาเป็น String ISO
-    ex_dividend_date: string;   // มาเป็น String ISO
-    record_date: string;
-    payment_date: string;
-    dividend_per_share: number;
-    source_of_dividend?: string | null;
-    calculation_status: string;
-    calculated_at: string;
-}
-export interface Dividend {
-    dividendId: string;
-    stockSymbol: string;
-    announcementDate: Date; // แปลงเป็น Date Object
-    exDividendDate: Date;
-    recordDate: Date;
-    paymentDate: Date;
-    dividendPerShare: number;
-    sourceOfDividend?: string | null;
-}
 
 export interface Prediction {
   stock_symbol: string;

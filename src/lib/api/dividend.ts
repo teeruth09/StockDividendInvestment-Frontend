@@ -1,5 +1,5 @@
 import { DividendReceived, RawDividendReceived, RawUpcomingDividend, UpcomingDividend } from "@/types/dividend";
-import { RawDividendData, Dividend } from "@/types/stock";
+import { RawDividendData, Dividend } from "@/types/dividend";
 import { mapRawDividendReceived, mapRawUpcomingDividend } from "@/utils/dividend-mapper";
 import { mapRawDividendsToDividends } from "@/utils/stock-mapper";
 

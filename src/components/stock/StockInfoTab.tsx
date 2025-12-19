@@ -2,7 +2,8 @@
 "use client"; // อาจจำเป็นถ้าใช้ Hooks ภายใน (แม้ว่าตอนนี้จะยังไม่ใช้)
 import React from 'react';
 import { Box, Typography, Divider, Grid } from '@mui/material';
-import { HistoricalPrice, Dividend } from "@/types/stock";
+import { HistoricalPrice } from "@/types/stock";
+import { Dividend } from '@/types/dividend';
 import  FormattedNumberDisplay from '../FormattedNumberDisplay';
 
 // 💡 NEW PROPS INTERFACE: สะท้อนการ Fetch Data แยกส่วน
