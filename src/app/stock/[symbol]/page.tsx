@@ -241,6 +241,7 @@ export default function StockDetailPage() {
 
                 // หาค่า percentChange จาก currentSummary
                 const percentChange = summary?.summary[timeframe]?.percentChange ?? 0;
+                console.log("percentChange",percentChange)
                 //map data
                 setChartData({
                     labels: data.map(d => {
