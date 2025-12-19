@@ -13,7 +13,7 @@ import {
   CircularProgress,
   Alert,
 } from "@mui/material";
-import { Dividend } from "@/types/stock";
+import { Dividend } from "@/types/dividend";
 import { getDividendHistoryApi } from "@/lib/api/dividend"; 
 import  FormattedNumberDisplay from '../FormattedNumberDisplay';
 

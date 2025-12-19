@@ -33,7 +33,8 @@ import {
 } from "chart.js";
 import { useEffect, useState } from 'react';
 import { fetchPriceByDate, getLatestPriceApi, getStockChartApi, getStockSummaryApi } from '@/lib/api/stock';
-import { Dividend, HistoricalPrice, StockSummary } from '@/types/stock';
+import { HistoricalPrice, StockSummary } from '@/types/stock';
+import { Dividend } from '@/types/dividend';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -241,6 +242,7 @@ export default function StockDetailPage() {
 
                 // หาค่า percentChange จาก currentSummary
                 const percentChange = summary?.summary[timeframe]?.percentChange ?? 0;
+                console.log("percentChange",percentChange)
                 //map data
                 setChartData({
                     labels: data.map(d => {

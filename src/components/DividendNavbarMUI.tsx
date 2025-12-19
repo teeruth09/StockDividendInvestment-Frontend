@@ -38,7 +38,7 @@ export default function DividendNavbarMUI() {
     { name: 'หน้าแรก', href: '/' },
     { name: 'หุ้น', href: '/stock'},
     { name: 'ภาพรวมพอร์ต', href: '/portfolio' },
-    { name: 'ประวัติการซื้อ/ขาย', href: '/transaction' },
+    { name: 'ประวัติรายการ', href: '/transaction' },
     { name: 'ปฏิทินหลักทรัพย์', href: '/calendar' },
     { name: 'เกี่ยวกับภาษี', href: '/tax' },
   ]

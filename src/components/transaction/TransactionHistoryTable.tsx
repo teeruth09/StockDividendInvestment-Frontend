@@ -72,19 +72,20 @@ export default function TransactionHistoryTable() {
     try {
       setLoading(true);
       
-      // 💡 ดึงค่า symbol และ transactionType จาก State ใน Component
       const filters = {
           symbol: search || undefined,
           type: transactionType === 'ALL' ? undefined : transactionType
       };
 
-      // 💡 เรียก API โดยส่ง token และ filters
-      // (ไม่จำเป็นต้องส่ง userId เพราะ Backend ดึงจาก Token แล้ว)
       const data = await getTransactionHistoryApi(accessToken, filters);
       
       setTransactions(data);
-    } catch (err) {
-      // ...
+    } catch (error) {
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError("เกิดข้อผิดพลาดในการดูประวัตการซื้อขาย");
+      }
     } finally {
       setLoading(false);
     }
@@ -101,7 +102,7 @@ export default function TransactionHistoryTable() {
     setOrderBy(property);
   };
 
-  // 💡 กรองและเรียงลำดับใน Frontend (ตามตัวอย่าง StockTable)
+  //กรองและเรียงลำดับใน Frontend (ตามตัวอย่าง StockTable)
   const filteredAndSortedTransactions = React.useMemo(() => {
     let filtered = transactions;
     
@@ -117,7 +118,7 @@ export default function TransactionHistoryTable() {
 
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p: 1 }}>
       <Typography variant="h6" gutterBottom>
         ประวัติการทำธุรกรรม (ซื้อ/ขาย)
       </Typography>

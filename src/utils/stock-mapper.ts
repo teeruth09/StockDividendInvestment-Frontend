@@ -1,5 +1,5 @@
-import { Dividend, HistoricalPrice, RawDividendData, RawHistoricalPriceData, RawStock, Stock } from "@/types/stock";
-
+import { HistoricalPrice, RawHistoricalPriceData, RawStock, Stock } from "@/types/stock";
+import { Dividend, RawDividendData } from "@/types/dividend";
 /**
  * แปลง Raw Historical Price Data (Snake Case) ให้เป็น HistoricalPrice (Camel Case)
  */
