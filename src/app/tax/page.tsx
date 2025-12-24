@@ -1,6 +1,6 @@
 // TaxCalculatorPage.tsx
 "use client";
-import React, { JSX, useMemo, useState } from "react";
+import React, { JSX, useEffect, useState } from "react";
 import {
   Box,
   Grid,
@@ -8,9 +8,7 @@ import {
   CardContent,
   Typography,
   TextField,
-  MenuItem,
   Button,
-  Divider,
   Table,
   TableHead,
   TableBody,
@@ -18,248 +16,217 @@ import {
   TableCell,
   Collapse,
   Paper,
+  FormControlLabel,
+  Switch,
+  CircularProgress,
+  Divider,
+  TableContainer,
+  Avatar,
 } from "@mui/material";
 import CalculateIcon from "@mui/icons-material/Calculate";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import CreateIcon from '@mui/icons-material/Create';
+import { useAuth } from "../contexts/AuthContext";
+import { CalculateTax, TaxBreakdown, TaxResult } from "@/types/tax";
+import { calculateTaxApi, calculateTaxGuestApi, getTaxInfoApi } from "@/lib/api/tax";
+import NumericInput from "@/components/NumericInput";
 
-type DeductionState = {
-  personal: number;
-  spouse: number;
-  child: number;
-  parent: number;
-  social: number;
-  pvd: number;
-  rmf: number;
-  ssf: number;
-  lifeInsurance: number;
-  healthInsuranceParents: number;
-  mortgageInterest: number;
-  donation: number;
+const formatCurrency = (n: number | undefined | null) => {
+  if (n === undefined || n === null) return "0";
+  return new Intl.NumberFormat("th-TH", { maximumFractionDigits: 2 }).format(n);
 };
-
-type BreakdownItem = {
-  bracket: string;
-  rate: number;
-  amount: number;
-  tax: number;
-  creditUsed: number;
-  creditRefund: number;
-};
-
-const TAX_BRACKETS = [
-  { min: 0, max: 150000, rate: 0 },
-  { min: 150000, max: 300000, rate: 5 },
-  { min: 300000, max: 500000, rate: 10 },
-  { min: 500000, max: 750000, rate: 15 },
-  { min: 750000, max: 1000000, rate: 20 },
-  { min: 1000000, max: 2000000, rate: 25 },
-  { min: 2000000, max: 5000000, rate: 30 },
-  { min: 5000000, max: Infinity, rate: 35 },
-];
-
-const formatCurrency = (n: number) =>
-  new Intl.NumberFormat("th-TH", { maximumFractionDigits: 0 }).format(n);
 
 export default function TaxCalculatorPage(): JSX.Element {
-  const [salary, setSalary] = useState<number | "">("");
-  const [bonus, setBonus] = useState<number | "">("");
-  const [dividend, setDividend] = useState<number | "">("");
-  const [otherIncome, setOtherIncome] = useState<number | "">("");
+  const { token } = useAuth();    
+  
   const [taxYear, setTaxYear] = useState<number>(2025);
 
-  const [deductions, setDeductions] = useState<DeductionState>({
-    personal: 60000,
-    spouse: 0,
-    child: 0,
-    parent: 0,
-    social: 0,
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<TaxResult | null>(null); // รับข้อมูลจาก Backend
+  const [resultOpen, setResultOpen] = useState(false);
+
+  const [isEditMode, setIsEditMode] = useState(false);
+  
+  // 1. ปรับ State ให้ตรงกับ DTO
+  const [formData, setFormData] = useState<CalculateTax>({
+    year: 2025,
+    salary: 0,
+    bonus: 0,
+    otherIncome: 0,
+    dividendAmount: 0,
+    personalDeduction: 60000,
+    spouseDeduction: 0,
+    childDeduction: 0,
+    parentDeduction: 0,
+    socialSecurity: 0,
+    lifeInsurance: 0,
+    healthInsurance: 0,
+    parentHealthInsurance: 0,
     pvd: 0,
     rmf: 0,
     ssf: 0,
-    lifeInsurance: 0,
-    healthInsuranceParents: 0,
-    mortgageInterest: 0,
-    donation: 0,
+    thaiEsg: 0,
+    homeLoanInterest: 0,
+    donationGeneral: 0,
+    donationEducation: 0,
+    includeDividendCredit: true, // Default เป็น True
+    dividendCreditFactor: 0.20, // อัตราเครดิตภาษี เช่น 0.25 (20/80)
   });
 
-  const creditOptions = [
-    { key: "3/7", label: "3/7 (มาตรฐานกรมฯ)", factor: 3 / 7 },
-    { key: "10/90", label: "10/90", factor: 10 / 90 },
-    { key: "20/80", label: "20/80", factor: 20 / 80 },
-    { key: "custom", label: "กำหนดเอง", factor: 0 },
-  ];
-  const [creditType, setCreditType] = useState<string>("20/80"); //default ระบบ
-  const [creditCustomFactor, setCreditCustomFactor] = useState<number>(0.1);
-
-  const [resultOpen, setResultOpen] = useState<boolean>(false);
-  const [showBreakdown, setShowBreakdown] = useState<boolean>(false);
-
-  const getCreditFactor = () => {
-    const opt = creditOptions.find((o) => o.key === creditType);
-    if (!opt) return 0;
-    if (opt.key === "custom") return creditCustomFactor;
-    return opt.factor;
-  };
-
-  const report = useMemo(() => {
-    const salaryNum = Number(salary || 0);
-    const bonusNum = Number(bonus || 0);
-    const dividendNum = Number(dividend || 0);
-    const otherNum = Number(otherIncome || 0);
-
-    const totalIncome = salaryNum + bonusNum + dividendNum + otherNum;
-
-    const applyCaps = (d: DeductionState) => ({
-      personal: Math.min(d.personal, 60000),
-      spouse: Math.min(d.spouse, 60000),
-      child: d.child,
-      parent: d.parent,
-      social: Math.min(d.social, 9000),
-      pvd: Math.min(d.pvd, 10000),
-      rmf: Math.min(d.rmf, Math.min(totalIncome * 0.3, 500000)),
-      ssf: Math.min(d.ssf, Math.min(totalIncome * 0.3, 200000)),
-      lifeInsurance: Math.min(d.lifeInsurance, 100000),
-      healthInsuranceParents: Math.min(d.healthInsuranceParents, 25000),
-      mortgageInterest: Math.min(d.mortgageInterest, 100000),
-      donation: Math.min(d.donation, totalIncome * 0.1),
-    });
-
-    const capped = applyCaps(deductions);
-    const totalDeductions =
-      capped.personal +
-      capped.spouse +
-      capped.child +
-      capped.parent +
-      capped.social +
-      capped.pvd +
-      capped.rmf +
-      capped.ssf +
-      capped.lifeInsurance +
-      capped.healthInsuranceParents +
-      capped.mortgageInterest +
-      capped.donation;
-
-    const netIncome = Math.max(0, totalIncome - totalDeductions);
-
-    // Tax breakdown per bracket
-    let remaining = netIncome;
-    let taxBeforeCredit = 0;
-    let remainingCredit = dividendNum * getCreditFactor();
-    const breakdown: BreakdownItem[] = [];
-
-    for (const br of TAX_BRACKETS) {
-      if (remaining <= 0) break;
-      const range = Math.min(remaining, br.max - br.min);
-      if (range > 0) {
-        const tax = (range * br.rate) / 100;
-        const creditUsed = Math.min(tax, remainingCredit);
-        const creditRefund = Math.max(0, remainingCredit - taxUsedForRefund(tax, remainingCredit, tax));
-        remainingCredit -= creditUsed;
-        breakdown.push({
-          bracket: `${formatCurrency(br.min)} - ${br.max === Infinity ? "∞" : formatCurrency(br.max)}`,
-          rate: br.rate,
-          amount: range,
-          tax,
-          creditUsed,
-          creditRefund,
-        });
-        taxBeforeCredit += tax;
+  // 2. โหลดข้อมูลเดิมที่เคยบันทึกไว้ (ถ้ามี)
+  useEffect(() => {
+    const loadData = async () => {
+      if(!token) return
+      try {
+        const data = await getTaxInfoApi(token, taxYear);
+        if (data) {
+          setFormData(data);
+          // เมื่อโหลดข้อมูลจาก DB สำเร็จ ให้ปิดโหมด Manual เพื่อ Lock ช่องกรอกไว้ก่อน
+        }
+        console.log(data)
+      } catch (err) {
+        console.log("No previous data found for this year",err);
       }
-      remaining -= range;
+    };
+    loadData();
+  }, [token,taxYear]);
+
+  const handleInputChange = (key: keyof CalculateTax) => (v: string | number | boolean) => {
+    setFormData(prev => ({ ...prev, [key]: v }));
+  };
+
+  // 3. ฟังก์ชันเรียก API คำนวณ
+  const runCalculateApi = async () => {
+    setLoading(true);
+    try {
+      let response;
+
+      const payload = {
+        ...formData,
+        // ถ้า Login และไม่ได้เปิดโหมด Manual ให้ส่งเป็น null หรือค่าพิเศษ 
+        // เพื่อให้ Backend รู้ว่าต้องไปคำนวณจากตาราง TaxCredit ใน DB แทน
+        dividendAmount: (token && !isEditMode) ? null : formData.dividendAmount,
+      };
+
+      if (token) {
+        //กรณี Login แล้วจะใช้ API นี้
+        response = await calculateTaxApi(token, payload);
+      } else {
+        //กรณีไม่ Login GuestUser
+        // Backend จะคำนวณจาก dividendAmount และ factor ที่กรอกมาใน formData
+        response = await calculateTaxGuestApi(formData);
+      }
+      setResult(response);
+      setResultOpen(true);
+      // Scroll ไปที่ส่วนผลลัพธ์เพื่อให้ UX ดีขึ้น
+      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    } catch (error) {
+      console.error("Calculation Error:", error);
+    } finally {
+      setLoading(false);
     }
-
-    const totalCreditUsed = dividendNum * getCreditFactor() - Math.max(0, remainingCredit);
-    const totalRefund = Math.max(0, remainingCredit);
-    const taxAfterCredit = Math.max(0, taxBeforeCredit - totalCreditUsed);
-
-    const deductionDetails: Record<string, number> = {
-      "ค่าลดหย่อนส่วนตัว": capped.personal,
-      "ค่าลดหย่อนคู่สมรส": capped.spouse,
-      "ค่าลดหย่อนบุตร": capped.child,
-      "ค่าลดหย่อนบิดามารดา": capped.parent,
-      "ประกันสังคม": capped.social,
-      "กองทุนสำรองเลี้ยงชีพ (PVD)": capped.pvd,
-      "กองทุน RMF": capped.rmf,
-      "กองทุน SSF": capped.ssf,
-      "เบี้ยประกันชีวิต": capped.lifeInsurance,
-      "เบี้ยประกันสุขภาพบิดามารดา": capped.healthInsuranceParents,
-      "ดอกเบี้ยบ้าน": capped.mortgageInterest,
-      "เงินบริจาค": capped.donation,
-    };
-
-    return {
-      totalIncome,
-      totalDeductions,
-      netIncome,
-      breakdown,
-      taxBeforeCredit,
-      totalCreditUsed,
-      totalRefund,
-      taxAfterCredit,
-      deductionDetails,
-      effectiveRateBefore: totalIncome > 0 ? (taxBeforeCredit / totalIncome) * 100 : 0,
-      effectiveRateAfter: totalIncome > 0 ? (taxAfterCredit / totalIncome) * 100 : 0,
-    };
-  }, [salary, bonus, dividend, otherIncome, deductions, creditType, creditCustomFactor]);
-
-  function taxUsedForRefund(tax: number, remainingCredit: number, creditUsed: number) {
-    // return credit used for each bracket (cannot exceed tax)
-    return Math.min(tax, remainingCredit);
   };
 
-  const onDeductionsChange = (key: keyof DeductionState) => (v: number | string) => {
-    setDeductions((p) => ({ ...p, [key]: Number(v || 0) }));
-  };
-
-  const runCalculate = () => {
-    setResultOpen(true);
-    setShowBreakdown(true);
+  const getRateColor = (currentRate: number, comparisonRate: number) => {
+    if (currentRate < comparisonRate) return "#2e7d32"; // สีเขียว (ดีกว่า)
+    if (currentRate > comparisonRate) return "#d32f2f"; // สีแดง (แย่กว่า)
+    return "text.secondary"; // สีปกติ (เท่ากัน)
   };
 
   return (
     <Box sx={{ p: { xs: 2, md: 4 } }}>
-      <Typography variant="h4" gutterBottom>
-        เครื่องคำนวณภาษีเงินได้บุคคลธรรมดา
-      </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+        <Typography variant="h4" fontWeight="bold" gutterBottom>
+          เครื่องคำนวณภาษีเงินได้บุคคลธรรมดา
+        </Typography>
+        {!!token && (
+          <Button
+            variant={isEditMode ? "contained" : "contained"}
+            color={isEditMode ? "success" : "primary"}
+            startIcon={<CreateIcon />}
+            onClick={() => setIsEditMode(!isEditMode)}
+          >
+            {isEditMode ? "เสร็จสิ้นการแก้ไข" : "แก้ไขข้อมูล/จำลองภาษี"}
+          </Button>
+        )}
+      </Box>
 
       <Card sx={{ borderRadius: 2 }}>
         <CardContent>
-          <Typography variant="h6" gutterBottom>รายได้</Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+            <Avatar 
+              src="/icon/salary.png"
+              variant="square" 
+              sx={{ width: 32, height: 32 }} 
+            />
+            <Typography variant="h6">รายได้</Typography>
+          </Box>
           <Grid container spacing={2}>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                fullWidth
+              <NumericInput
                 label="เงินเดือน/รายได้อื่น"
-                type="number"
-                value={salary}
-                onChange={(e) => setSalary(Number(e.target.value || 0))}
+                value={formData.salary ?? 0}
+                onValueChange={(value) =>
+                  handleInputChange("salary")(value === '' ? 0 : Number(value))
+                }
+                textFieldProps={{
+                  fullWidth: true,
+                  // ถ้ามี token ต้องกด Edit ก่อนถึงจะแก้ได้ แต่ถ้าเป็น Guest แก้ได้ตลอด
+                  disabled: !!token && !isEditMode, 
+                  //variant: (!!token && !isEditMode) ? "filled" : "outlined",
+                  helperText: (!!token && !isEditMode)
+                }}
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                fullWidth
+              <NumericInput
                 label="โบนัส"
-                type="number"
-                value={bonus}
-                onChange={(e) => setBonus(Number(e.target.value || 0))}
+                value={formData.bonus ?? 0}
+                onValueChange={(value) =>
+                  handleInputChange("bonus")(value === '' ? 0 : Number(value))
+                }
+                textFieldProps={{
+                  fullWidth: true,
+                  disabled: !!token && !isEditMode, 
+                  helperText: (!!token && !isEditMode)
+                }}
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                fullWidth
-                label="เงินปันผล"
-                type="number"
-                value={dividend}
-                onChange={(e) => setDividend(Number(e.target.value || 0))}
+              <NumericInput
+                label="เงินปันผลรวม (ก่อนหักภาษี 10%)"
+                value={formData.dividendAmount ?? 0}
+                onValueChange={(value) =>
+                  handleInputChange("dividendAmount")(value === '' ? 0 : Number(value))
+                }
+                textFieldProps={{
+                  fullWidth: true,
+                  disabled: !!token && !isEditMode, 
+                  helperText: (!!token && !isEditMode)
+                }}
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                fullWidth
+               <NumericInput
                 label="รายได้อื่น ๆ"
-                type="number"
-                value={otherIncome}
-                onChange={(e) => setOtherIncome(Number(e.target.value || 0))}
+                value={formData.otherIncome ?? 0}
+                onValueChange={(value) =>
+                  handleInputChange("otherIncome")(value === '' ? 0 : Number(value))
+                }
+                textFieldProps={{
+                  fullWidth: true,
+                  disabled: !!token && !isEditMode, 
+                  helperText: (!!token && !isEditMode)
+                }}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 3 }} sx={{ display: 'flex', alignItems: 'center' }}>
+              <FormControlLabel
+                control={
+                  <Switch 
+                    checked={!!formData.includeDividendCredit}
+                    onChange={(e) => handleInputChange("includeDividendCredit")(e.target.checked)} 
+                  />}
+                label="นำเครดิตภาษีเงินปันผลมาคำนวณ"
               />
             </Grid>
           </Grid>
@@ -270,42 +237,69 @@ export default function TaxCalculatorPage(): JSX.Element {
       <Box mt={2} />
       <Card sx={{ borderRadius: 2 }}>
         <CardContent>
-          <Typography variant="h6" gutterBottom>ลดหย่อนส่วนตัวและครอบครัว</Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+            <Avatar 
+              src="/icon/taxDeduction.png"
+              variant="square" 
+              sx={{ width: 32, height: 32 }} 
+            />
+            <Typography variant="h6">ลดหย่อนส่วนตัวและครอบครัว</Typography>
+          </Box>
           <Grid container spacing={2}>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                fullWidth
-                label="ลดหย่อนตัวเอง"
-                type="number"
-                value={deductions.personal}
-                onChange={(e) => onDeductionsChange("personal")(e.target.value)}
+              <NumericInput
+                label="ลดหย่อนส่วนตัว"
+                value={formData.personalDeduction ?? 0}
+                onValueChange={(value) =>
+                  handleInputChange("personalDeduction")(value === '' ? 0 : Number(value))
+                }
+                textFieldProps={{
+                  fullWidth: true,
+                  disabled: !!token && !isEditMode, 
+                  helperText: (!!token && !isEditMode)
+                }}
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                fullWidth
+              <NumericInput
                 label="คู่สมรส"
-                type="number"
-                value={deductions.spouse}
-                onChange={(e) => onDeductionsChange("spouse")(e.target.value)}
+                value={formData.spouseDeduction ?? 0}
+                onValueChange={(value) =>
+                  handleInputChange("spouseDeduction")(value === '' ? 0 : Number(value))
+                }
+                textFieldProps={{
+                  fullWidth: true,
+                  disabled: !!token && !isEditMode, 
+                  helperText: (!!token && !isEditMode)
+                }}
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                fullWidth
+              <NumericInput
                 label="บุตร"
-                type="number"
-                value={deductions.child}
-                onChange={(e) => onDeductionsChange("child")(e.target.value)}
+                value={formData.childDeduction ?? 0}
+                onValueChange={(value) =>
+                  handleInputChange("childDeduction")(value === '' ? 0 : Number(value))
+                }
+                textFieldProps={{
+                  fullWidth: true,
+                  disabled: !!token && !isEditMode, 
+                  helperText: (!!token && !isEditMode)
+                }}
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                fullWidth
+              <NumericInput
                 label="พ่อแม่"
-                type="number"
-                value={deductions.parent}
-                onChange={(e) => onDeductionsChange("parent")(e.target.value)}
+                value={formData.parentDeduction ?? 0}
+                onValueChange={(value) =>
+                  handleInputChange("parentDeduction")(value === '' ? 0 : Number(value))
+                }
+                textFieldProps={{
+                  fullWidth: true,
+                  disabled: !!token && !isEditMode, 
+                  helperText: (!!token && !isEditMode)
+                }}
               />
             </Grid>
           </Grid>
@@ -316,62 +310,127 @@ export default function TaxCalculatorPage(): JSX.Element {
       <Box mt={2} />
       <Card sx={{ borderRadius: 2 }}>
         <CardContent>
-          <Typography variant="h6" gutterBottom>กองทุนและประกัน</Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+            <Avatar 
+              src="/icon/fundInsurance.png"
+              variant="square" 
+              sx={{ width: 32, height: 32 }} 
+            />
+            <Typography variant="h6">กองทุนและประกัน</Typography>
+          </Box>
           <Grid container spacing={2}>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                fullWidth
+              <NumericInput
                 label="ประกันสังคม (สูงสุด 9,000)"
-                type="number"
-                value={deductions.social}
-                onChange={(e) => onDeductionsChange("social")(e.target.value)}
+                value={formData.socialSecurity ?? 0}
+                onValueChange={(value) =>
+                  handleInputChange("socialSecurity")(value === '' ? 0 : Number(value))
+                }
+                textFieldProps={{
+                  fullWidth: true,
+                  disabled: !!token && !isEditMode, 
+                  helperText: (!!token && !isEditMode)
+                }}
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                fullWidth
-                label="กองทุนสำรองเลี้ยงชีพ (PVD)"
-                type="number"
-                value={deductions.pvd}
-                onChange={(e) => onDeductionsChange("pvd")(e.target.value)}
-              />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                fullWidth
-                label="กองทุน RMF"
-                type="number"
-                value={deductions.rmf}
-                onChange={(e) => onDeductionsChange("rmf")(e.target.value)}
-              />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                fullWidth
-                label="กองทุน SSF"
-                type="number"
-                value={deductions.ssf}
-                onChange={(e) => onDeductionsChange("ssf")(e.target.value)}
-              />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                fullWidth
+              <NumericInput
                 label="เบี้ยประกันชีวิต"
-                type="number"
-                value={deductions.lifeInsurance}
-                onChange={(e) => onDeductionsChange("lifeInsurance")(e.target.value)}
+                value={formData.lifeInsurance ?? 0}
+                onValueChange={(value) =>
+                  handleInputChange("lifeInsurance")(value === '' ? 0 : Number(value))
+                }
+                textFieldProps={{
+                  fullWidth: true,
+                  disabled: !!token && !isEditMode, 
+                  helperText: (!!token && !isEditMode)
+                }}
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                fullWidth
-                label="เบี้ยประกันสุขภาพบิดามารดา"
-                type="number"
-                value={deductions.healthInsuranceParents}
-                onChange={(e) => onDeductionsChange("healthInsuranceParents")(e.target.value)}
+              <NumericInput
+                label="เบี้ยประกันสุขภาพ"
+                value={formData.healthInsurance ?? 0}
+                onValueChange={(value) =>
+                  handleInputChange("healthInsurance")(value === '' ? 0 : Number(value))
+                }
+                textFieldProps={{
+                  fullWidth: true,
+                  disabled: !!token && !isEditMode, 
+                  helperText: (!!token && !isEditMode)
+                }}
               />
             </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <NumericInput
+                label="เบี้ยประกันสุขภาพบิดามารดา"
+                value={formData.parentHealthInsurance ?? 0}
+                onValueChange={(value) =>
+                  handleInputChange("parentHealthInsurance")(value === '' ? 0 : Number(value))
+                }
+                textFieldProps={{
+                  fullWidth: true,
+                  disabled: !!token && !isEditMode, 
+                  helperText: (!!token && !isEditMode)
+                }}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <NumericInput
+                label="กองทุนสำรองเลี้ยงชีพ (PVD)"
+                value={formData.pvd ?? 0}
+                onValueChange={(value) =>
+                  handleInputChange("pvd")(value === '' ? 0 : Number(value))
+                }
+                textFieldProps={{
+                  fullWidth: true,
+                  disabled: !!token && !isEditMode, 
+                  helperText: (!!token && !isEditMode)
+                }}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <NumericInput
+                label="กองทุน RMF"
+                value={formData.rmf ?? 0}
+                onValueChange={(value) =>
+                  handleInputChange("rmf")(value === '' ? 0 : Number(value))
+                }
+                textFieldProps={{
+                  fullWidth: true,
+                  disabled: !!token && !isEditMode, 
+                  helperText: (!!token && !isEditMode)
+                }}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <NumericInput
+                label="กองทุน SSF"
+                value={formData.ssf ?? 0}
+                onValueChange={(value) =>
+                  handleInputChange("ssf")(value === '' ? 0 : Number(value))
+                }
+                textFieldProps={{
+                  fullWidth: true,
+                  disabled: !!token && !isEditMode, 
+                  helperText: (!!token && !isEditMode)
+                }}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <NumericInput
+                label="กองทุน Thai ESG"
+                value={formData.thaiEsg ?? 0}
+                onValueChange={(value) =>
+                  handleInputChange("thaiEsg")(value === '' ? 0 : Number(value))
+                }
+                textFieldProps={{
+                  fullWidth: true,
+                  disabled: !!token && !isEditMode, 
+                  helperText: (!!token && !isEditMode)
+                }}
+              />
+            </Grid>      
           </Grid>
         </CardContent>
       </Card>
@@ -380,24 +439,55 @@ export default function TaxCalculatorPage(): JSX.Element {
       <Box mt={2} />
       <Card sx={{ borderRadius: 2 }}>
         <CardContent>
-          <Typography variant="h6" gutterBottom>ลดหย่อนอื่น ๆ</Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+            <Avatar 
+              src="/icon/donation.png"
+              variant="square" 
+              sx={{ width: 32, height: 32 }} 
+            />
+            <Typography variant="h6">ลดหย่อนอื่นๆ</Typography>
+          </Box>
           <Grid container spacing={2}>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                fullWidth
+              <NumericInput
                 label="ดอกเบี้ยบ้าน"
-                type="number"
-                value={deductions.mortgageInterest}
-                onChange={(e) => onDeductionsChange("mortgageInterest")(e.target.value)}
+                value={formData.homeLoanInterest ?? 0}
+                onValueChange={(value) =>
+                  handleInputChange("homeLoanInterest")(value === '' ? 0 : Number(value))
+                }
+                textFieldProps={{
+                  fullWidth: true,
+                  disabled: !!token && !isEditMode, 
+                  helperText: (!!token && !isEditMode)
+                }}
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                fullWidth
-                label="บริจาค"
-                type="number"
-                value={deductions.donation}
-                onChange={(e) => onDeductionsChange("donation")(e.target.value)}
+              <NumericInput
+                label="บริจาคทั่วไป"
+                value={formData.donationGeneral ?? 0}
+                onValueChange={(value) =>
+                  handleInputChange("donationGeneral")(value === '' ? 0 : Number(value))
+                }
+                textFieldProps={{
+                  fullWidth: true,
+                  disabled: !!token && !isEditMode, 
+                  helperText: (!!token && !isEditMode)
+                }}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <NumericInput
+                label="บริจาคเพื่อการศึกษา"
+                value={formData.donationEducation ?? 0}
+                onValueChange={(value) =>
+                  handleInputChange("donationEducation")(value === '' ? 0 : Number(value))
+                }
+                textFieldProps={{
+                  fullWidth: true,
+                  disabled: !!token && !isEditMode, 
+                  helperText: (!!token && !isEditMode)
+                }}
               />
             </Grid>
           </Grid>
@@ -407,74 +497,135 @@ export default function TaxCalculatorPage(): JSX.Element {
       <Box mt={3} textAlign="center">
         <Button
           variant="contained"
-          startIcon={<CalculateIcon />}
-          onClick={runCalculate}
+          size="large"
+          startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <CalculateIcon />}
+          onClick={runCalculateApi}
+          disabled={loading}
         >
-          คำนวณภาษี
+          {loading ? "กำลังคำนวณ..." : "คำนวณภาษี"}
         </Button>
       </Box>
 
-      {/* Result */}
+      {/* --- ส่วนแสดงผลลัพธ์ (Result) เปลี่ยนมาดึงจาก result state --- */}
       <Collapse in={resultOpen}>
         <Box mt={3}>
           <Card sx={{ borderRadius: 2 }}>
             <CardContent>
-              <Typography variant="h6">ผลลัพธ์</Typography>
-              <Typography>รายได้รวม: {formatCurrency(report.totalIncome)} บาท</Typography>
-              <Typography>รวมค่าลดหย่อน: {formatCurrency(report.totalDeductions)} บาท</Typography>
-              <Typography>รายได้สุทธิ: {formatCurrency(report.netIncome)} บาท</Typography>
-              <Typography>ภาษีก่อนเครดิต: {formatCurrency(report.taxBeforeCredit)} บาท</Typography>
-              <Typography>เครดิตเงินปันผลที่ใช้: {formatCurrency(report.totalCreditUsed)} บาท</Typography>
-              <Typography>เครดิตส่วนเกินคืนเงิน: {formatCurrency(report.totalRefund)} บาท</Typography>
-              <Typography>ภาษีหลังเครดิต: {formatCurrency(report.taxAfterCredit)} บาท</Typography>
-              <Typography>อัตราภาษีมีประสิทธิภาพ (ก่อนเครดิต): {report.effectiveRateBefore.toFixed(2)}%</Typography>
-              <Typography>อัตราภาษีมีประสิทธิภาพ (หลังเครดิต): {report.effectiveRateAfter.toFixed(2)}%</Typography>
-
-              <Box mt={2}>
-                <Typography variant="subtitle1">รายละเอียดค่าลดหย่อน</Typography>
-                <Paper>
-                <Table size="small">
-                  <TableBody>
-                    {Object.entries(report.deductionDetails).map(([k, v]) => (
-                      <TableRow key={k}>
-                        <TableCell>{k}</TableCell>
-                        <TableCell align="right">{formatCurrency(v)}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-                </Paper>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Avatar 
+                  src="/icon/result.png"
+                  variant="square" 
+                  sx={{ width: 32, height: 32 }} 
+                />
+                <Typography variant="h5" fontWeight="bold" gutterBottom>ผลลัพธ์จากระบบ</Typography>
               </Box>
 
-              <Box mt={2}>
-                <Typography variant="subtitle1">Breakdown ภาษีตามขั้นบันได</Typography>
-                <Paper>
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>ขั้นบันได</TableCell>
-                      <TableCell align="right">Rate (%)</TableCell>
-                      <TableCell align="right">ฐานภาษี</TableCell>
-                      <TableCell align="right">ภาษี</TableCell>
-                      <TableCell align="right">เครดิตใช้ลด</TableCell>
-                      <TableCell align="right">เครดิตส่วนเกินคืน</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {report.breakdown.map((row, i) => (
-                      <TableRow key={i}>
-                        <TableCell>{row.bracket}</TableCell>
-                        <TableCell align="right">{row.rate}</TableCell>
-                        <TableCell align="right">{formatCurrency(row.amount)}</TableCell>
-                        <TableCell align="right">{formatCurrency(row.tax)}</TableCell>
-                        <TableCell align="right">{formatCurrency(row.creditUsed)}</TableCell>
-                        <TableCell align="right">{formatCurrency(row.creditRefund)}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-                </Paper>
+              <Grid container spacing={2} sx={{ mb: 3 }}>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <Typography>
+                    รวมเงินได้พึงประเมินตามาตรา 40 (1) และ (2): <b>{formatCurrency(result?.incomeType1And2 ?? 0)}</b> บาท
+                  </Typography>
+                  <Typography>
+                    หักค่าใช้จ่าย: <b>{formatCurrency(result?.totalExpenses ?? 0)}</b> บาท
+                  </Typography>
+                  <Typography>
+                    รายได้หลังหักค่าใช้จ่าย: <b>{formatCurrency(result?.incomeAfterExpenses ?? 0)}</b> บาท
+                  </Typography>
+                  <Typography>
+                    เงินปันผลรวม: <b>{formatCurrency(result?.totalGrossDividend ?? 0)}</b> บาท
+                  </Typography>
+                  <Typography>
+                    รายได้รวมก่อนลดหย่อน: <b>{formatCurrency(result?.totalIncome ?? 0)}</b> บาท
+                  </Typography>
+                  <Typography>รวมค่าลดหย่อน: <b>{formatCurrency(result?.totalDeductions ?? 0)}</b> บาท</Typography>
+                  <Typography color="primary">รายได้สุทธิ: <b>{formatCurrency(result?.netIncome ?? 0)}</b> บาท</Typography>
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <Typography>ภาษีที่คำนวณได้: <b>{formatCurrency(result?.taxBeforeCredit ?? 0)}</b> บาท</Typography>
+                  <Typography color="success.main">เครดิตภาษีปันผล: {formatCurrency(result?.totalTaxCredit ?? 0)} บาท</Typography>
+                  <Typography color="success.main">ภาษีปันผลหัก ณ ที่จ่าย (10%): {formatCurrency(result?.withholdingTax10 ?? 0)} บาท</Typography>
+                  <Divider sx={{ my: 1 }} />
+                  <Typography variant="h6" color={result?.isRefund ? "success.main" : "error.main"}>
+                    {result?.isRefund ? "ภาษีชำระเกิน (ได้รับคืน): " : "ภาษีที่ต้องชำระเพิ่ม: "}
+                    {formatCurrency(result?.isRefund ? result?.refundAmount : result?.taxFinal)} บาท
+                  </Typography>
+                </Grid>
+              </Grid>
+
+              {/* รายละเอียดค่าลดหย่อน */}
+              <Box mt={4}>
+                <Typography variant="subtitle1" fontWeight="bold" gutterBottom>รายละเอียดค่าลดหย่อนที่ใช้จริง</Typography>
+                <TableContainer component={Paper} variant="outlined">
+                  <Table size="small">
+                    <TableBody>
+                      {result?.deductionDetails && Object.entries(result.deductionDetails).map(([k, v]: [string, number]) => (
+                        <TableRow key={k}>
+                          <TableCell sx={{ bgcolor: '#fafafa', width: '60%' }}>{k}</TableCell>
+                          <TableCell align="right">{formatCurrency(v)} บาท</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
               </Box>
+
+              {/* Tax Breakdown */}
+              <Box mt={4}>
+                <Typography variant="subtitle1" fontWeight="bold" gutterBottom>Breakdown ภาษีตามขั้นบันได</Typography>
+                <TableContainer component={Paper} variant="outlined">
+                  <Table size="small">
+                    <TableHead sx={{ bgcolor: '#f5f5f5' }}>
+                      <TableRow>
+                        <TableCell>ขั้นบันได</TableCell>
+                        <TableCell align="right">อัตรา (%)</TableCell>
+                        <TableCell align="right">เงินได้ในขั้นนี้</TableCell>
+                        <TableCell align="right">ภาษีที่คำนวณได้</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {result?.breakdown?.map((row: TaxBreakdown, i: number) => (
+                        <TableRow key={i}>
+                          <TableCell>{row.bracket}</TableCell>
+                          <TableCell align="right">{row.rate}%</TableCell>
+                          <TableCell align="right">{formatCurrency(row.amount)}</TableCell>
+                          <TableCell align="right">{formatCurrency(row.tax)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </Box>
+
+            <Box mt={3} p={2} bgcolor="#f8f9fa" borderRadius={1}>
+              <Typography variant="subtitle2" gutterBottom>
+                * อัตราภาษีที่แท้จริง (Effective Tax Rate):
+              </Typography>
+              
+              <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                <Typography variant="body2">
+                  ก่อนใช้เครดิตภาษีเงินปันผล:{" "}
+                  <b style={{ color: getRateColor(result?.effectiveRateBefore ?? 0, result?.effectiveRateAfter ?? 0) }}>
+                    {result?.effectiveRateBefore?.toFixed(2)}%
+                  </b>
+                </Typography>
+
+                <Divider orientation="vertical" flexItem />
+
+                <Typography variant="body2">
+                  หลังใช้เครดิตภาษีเงินปันผล:{" "}
+                  <b style={{ color: getRateColor(result?.effectiveRateAfter ?? 0, result?.effectiveRateBefore ?? 0) }}>
+                    {result?.effectiveRateAfter?.toFixed(2)}%
+                  </b>
+                </Typography>
+              </Box>
+
+              {/* คำแนะนำเพิ่มเติมเพื่อให้ User เข้าใจง่ายขึ้น */}
+              {(result?.effectiveRateAfter ?? 0) < (result?.effectiveRateBefore ?? 0) && (
+                <Typography variant="caption" color="success.main" sx={{ mt: 1, display: 'block' }}>
+                  🎉 ยอดเยี่ยม! การใช้เครดิตภาษีช่วยให้คุณประหยัดภาษีได้จริง {((result?.effectiveRateAfter ?? 0) - (result?.effectiveRateBefore ?? 0)).toFixed(2)}%
+                </Typography>
+              )}
+            </Box>
             </CardContent>
           </Card>
         </Box>
