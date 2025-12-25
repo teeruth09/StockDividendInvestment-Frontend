@@ -36,17 +36,26 @@ const InvestmentProfileUI: React.FC = () => {
   // เปลี่ยนจาก data -> allYearsData
   const [allYearsData, setAllYearsData] = useState<{ [year: number]: UserTaxInfo }>({
     2025: {
-      tax_year: 2025,
-      annual_income: 0,
-      tax_bracket: 0,
-      personal_deduction: 0,
-      spouse_deduction: 0,
-      child_deduction: 0,
-      parent_deduction: 0,
-      life_insurance_deduction: 0,
-      health_insurance_deduction: 0,
-      provident_fund_deduction: 0,
-      retirement_mutual_fund: 0,
+      taxYear: 2025,
+      salary: 0, 
+      bonus: 0, 
+      otherIncome: 0,
+      personalDeduction: 60000, 
+      spouseDeduction: 0, 
+      childDeduction: 0, 
+      parentDeduction: 0, 
+      disabledDeduction: 0,
+      socialSecurity: 0, 
+      lifeInsurance: 0, 
+      healthInsurance: 0, 
+      parentHealthInsurance: 0,
+      pvdDeduction: 0, 
+      ssfInvestment: 0, 
+      rmfInvestment: 0, 
+      thaiesgInvestment: 0,
+      homeLoanInterest: 0, 
+      donationGeneral: 0, 
+      donationEducation: 0,
     },
   });
 
@@ -55,43 +64,76 @@ const InvestmentProfileUI: React.FC = () => {
   const [backupData, setBackupData] = useState<UserTaxInfo | null>(null);
 
   const numberFields: (keyof UserTaxInfo)[] = [
-    'annual_income',
-    'tax_bracket',
-    'personal_deduction',
-    'spouse_deduction',
-    'child_deduction',
-    'parent_deduction',
-    'life_insurance_deduction',
-    'health_insurance_deduction',
-    'provident_fund_deduction',
-    'retirement_mutual_fund',
+    'salary',
+    'bonus',
+    'otherIncome',
+    'personalDeduction',
+    'spouseDeduction',
+    'childDeduction',
+    'parentDeduction',
+    'disabledDeduction',
+    'socialSecurity',
+    'lifeInsurance',
+    'healthInsurance',
+    'parentDeduction',
+    'disabledDeduction',
+    'socialSecurity',
+    'lifeInsurance',
+    'healthInsurance',
+    'parentHealthInsurance',
+    'pvdDeduction',
+    'ssfInvestment',
+    'rmfInvestment',
+    'thaiesgInvestment',
+    'homeLoanInterest',
+    'donationGeneral',
+    'donationEducation',
   ];
 
   const fieldLabels: Record<string, string> = {
-    annual_income: 'รายได้รวมต่อปี',
-    personal_deduction: 'ลดหย่อนภาษีส่วนตัว',
-    spouse_deduction: 'ลดหย่อนภาษีคู่สมรส',
-    child_deduction: 'ลดหย่อนภาษีบุตร',
-    parent_deduction: 'ลดหย่อนภาษีบิดามารดา',
-    life_insurance_deduction: 'ประกันชีวิต',
-    health_insurance_deduction: 'ประกันสุขภาพ',
-    provident_fund_deduction: 'กองทุนสำรองเลี้ยงชีพ',
-    retirement_mutual_fund: 'กองทุน RMF',
+    salary: 'เงินเดือน/ค่าจ้าง',
+    bonus: 'โบนัส',
+    otherIncome: 'รายได้อื่นๆ (ม.40(2))',
+    personalDeduction: 'ลดหย่อนส่วนตัว',
+    spouseDeduction: 'ลดหย่อนคู่สมรส',
+    childDeduction: 'ลดหย่อนบุตร',
+    parentDeduction: 'ลดหย่อนบิดามารดา',
+    disabledDeduction: 'ลดหย่อนผู้พิการ/ทุพพลภาพ',
+    socialSecurity: 'ประกันสังคม',
+    lifeInsurance: 'เบี้ยประกันชีวิต',
+    healthInsurance: 'เบี้ยประกันสุขภาพ',
+    parentHealthInsurance: 'เบี้ยประกันสุขภาพพ่อแม่',
+    pvdDeduction: 'กองทุนสำรองเลี้ยงชีพ (PVD)',
+    ssfInvestment: 'กองทุน SSF',
+    rmfInvestment: 'กองทุน RMF',
+    thaiesgInvestment: 'กองทุน Thai ESG',
+    homeLoanInterest: 'ดอกเบี้ยกู้ซื้อบ้าน',
+    donationGeneral: 'เงินบริจาคทั่วไป',
+    donationEducation: 'เงินบริจาคการศึกษา/กีฬา (2 เท่า)',
   };
 
   function normalizeTaxInfo(apiData: Partial<UserTaxInfo>): UserTaxInfo {
     return {
-      tax_year: apiData.tax_year ?? currentYear,
-      annual_income: apiData.annual_income ?? 0,
-      tax_bracket: apiData.tax_bracket ?? 0,
-      personal_deduction: apiData.personal_deduction ?? 0,
-      spouse_deduction: apiData.spouse_deduction ?? 0,
-      child_deduction: apiData.child_deduction ?? 0,
-      parent_deduction: apiData.parent_deduction ?? 0,
-      life_insurance_deduction: apiData.life_insurance_deduction ?? 0,
-      health_insurance_deduction: apiData.health_insurance_deduction ?? 0,
-      provident_fund_deduction: apiData.provident_fund_deduction ?? 0,
-      retirement_mutual_fund: apiData.retirement_mutual_fund ?? 0,
+      taxYear: apiData.taxYear ?? currentYear,
+      salary: apiData.salary ?? 0,
+      bonus: apiData.bonus ?? 0,
+      otherIncome: apiData.otherIncome ?? 0,
+      personalDeduction: apiData.personalDeduction ?? 60000,
+      spouseDeduction: apiData.spouseDeduction ?? 0,
+      childDeduction: apiData.childDeduction ?? 0,
+      parentDeduction: apiData.parentDeduction ?? 0,
+      disabledDeduction: apiData.disabledDeduction ?? 0,
+      socialSecurity: apiData.socialSecurity ?? 0,
+      lifeInsurance: apiData.lifeInsurance ?? 0,
+      healthInsurance: apiData.healthInsurance ?? 0,
+      parentHealthInsurance: apiData.parentHealthInsurance ?? 0,
+      pvdDeduction: apiData.pvdDeduction ?? 0,
+      ssfInvestment: apiData.ssfInvestment ?? 0,
+      rmfInvestment: apiData.rmfInvestment ?? 0,
+      thaiesgInvestment: apiData.thaiesgInvestment ?? 0,
+      homeLoanInterest: apiData.homeLoanInterest ?? 0,
+      donationGeneral: apiData.donationGeneral ?? 0,
+      donationEducation: apiData.donationEducation ?? 0,
     };
   }
 
@@ -172,23 +214,61 @@ const InvestmentProfileUI: React.FC = () => {
     setAllYearsData((prev) => ({
       ...prev,
       [newYear]: {
-        tax_year: newYear,
-        annual_income: 0,
-        tax_bracket: 0,
-        personal_deduction: 0,
-        spouse_deduction: 0,
-        child_deduction: 0,
-        parent_deduction: 0,
-        life_insurance_deduction: 0,
-        health_insurance_deduction: 0,
-        provident_fund_deduction: 0,
-        retirement_mutual_fund: 0,
+        taxYear: newYear,
+        salary: 0, 
+        bonus: 0, 
+        otherIncome: 0,
+        personalDeduction: 60000, 
+        spouseDeduction: 0, 
+        childDeduction: 0, 
+        parentDeduction: 0, 
+        disabledDeduction: 0,
+        socialSecurity: 0, 
+        lifeInsurance: 0, 
+        healthInsurance: 0, 
+        parentHealthInsurance: 0,
+        pvdDeduction: 0, 
+        ssfInvestment: 0, 
+        rmfInvestment: 0, 
+        thaiesgInvestment: 0,
+        homeLoanInterest: 0, 
+        donationGeneral: 0, 
+        donationEducation: 0,
       },
     }));
     setCurrentYear(newYear);
   };
 
   if (!userData || !data) return <div>Loading profile...</div>;
+
+  // สร้าง Helper สำหรับแบ่งกลุ่ม Grid เพื่อความสวยงาม
+  const renderFieldGroup = (title: string, fields: (keyof UserTaxInfo)[]) => (
+    <Box sx={{ mb: 4 }}>
+      <Typography variant="subtitle1" fontWeight="bold" color="primary" gutterBottom sx={{ borderBottom: '1px solid #e0e0e0', pb: 0.5, mb: 2 }}>
+        {title}
+      </Typography>
+      <Grid container spacing={2}>
+        {fields.map((field) => (
+          <Grid size={{ xs: 12, sm: 6 }} key={field as string}>
+            <Typography variant="body2" color="text.secondary" gutterBottom>
+              {fieldLabels[field as string]} (บาท)
+            </Typography>
+            <NumericFormat
+              value={data[field]}
+              thousandSeparator
+              onValueChange={handleNumericChange(field)}
+              customInput={TextField}
+              fullWidth
+              variant="outlined"
+              disabled={!isEditing}
+              size="small"
+              sx={{ '& .MuiOutlinedInput-root': { backgroundColor: isEditing ? '#fff' : '#f5f5f5', borderRadius: 1 } }}
+            />
+          </Grid>
+        ))}
+      </Grid>
+    </Box>
+  );
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -228,8 +308,8 @@ const InvestmentProfileUI: React.FC = () => {
 
       {/* Main Grid */}
       <Grid container spacing={3}>
-        <Grid size={{xs:6, md:7}}>
-          <Card sx={{ borderRadius: 2 }}>
+        <Grid size={{ xs:12 }}>
+          <Card sx={{ borderRadius: 2 }} >
             <CardContent sx={{ p: 3 }}>
               {/* Header with Year Select */}
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 3, justifyContent: 'space-between' }}>
@@ -260,45 +340,19 @@ const InvestmentProfileUI: React.FC = () => {
                 </Box>
               </Box>
 
-              {/* Tax Info Grid */}
-              <Grid container spacing={2}>
-                {/* Year */}
-                <Grid size={{xs:6}}>
-                  <Typography variant="body2" color="text.secondary" gutterBottom>
-                    ปีภาษี
-                  </Typography>
-                  <TextField
-                    fullWidth
-                    variant="outlined"
-                    type="number"
-                    value={data.tax_year}
-                    onChange={handleInputChange('tax_year')}
-                    disabled={!isEditing}
-                    sx={{ '& .MuiOutlinedInput-root': { backgroundColor: '#f5f5f5', borderRadius: 1 } }}
-                  />
-                </Grid>
-
-                {/* รายการ */}
-                {['annual_income','personal_deduction', 'spouse_deduction', 'child_deduction', 'parent_deduction',
-                  'life_insurance_deduction', 'health_insurance_deduction', 'provident_fund_deduction',
-                  'retirement_mutual_fund'].map((field) => (
-                  <Grid size={{xs:6}} key={field}>
-                    <Typography variant="body2" color="text.secondary" gutterBottom>
-                      {fieldLabels[field]} (บาท)
-                    </Typography>
-                    <NumericFormat
-                      value={data[field as keyof UserTaxInfo]}
-                      thousandSeparator
-                      onValueChange={handleNumericChange(field as keyof UserTaxInfo)}
-                      customInput={TextField}
-                      fullWidth
-                      variant="outlined"
-                      disabled={!isEditing}
-                      sx={{ '& .MuiOutlinedInput-root': { backgroundColor: '#f5f5f5', borderRadius: 1 } }}
-                    />
-                  </Grid>
-                ))}
-              </Grid>
+              {/* แบ่งกลุ่มข้อมูลตาม Model ใหม่ */}
+              {renderFieldGroup("รายได้ (Income)", 
+                ['salary', 'bonus', 'otherIncome'])}
+              
+              {renderFieldGroup("1. ค่าลดหย่อนส่วนตัวและครอบครัว", 
+                ['personalDeduction', 'spouseDeduction', 'childDeduction', 'parentDeduction', 'disabledDeduction'])}
+              
+              {renderFieldGroup("2. กลุ่มประกันและการออม", 
+                ['socialSecurity', 'lifeInsurance', 'healthInsurance', 'parentHealthInsurance', 'pvdDeduction', 'ssfInvestment', 'rmfInvestment', 'thaiesgInvestment'])}
+              
+              {renderFieldGroup("3. กลุ่มอสังหาริมทรัพย์และอื่นๆ", 
+                ['homeLoanInterest', 'donationGeneral', 'donationEducation'])}
+                
             </CardContent>
           </Card>
         </Grid>
