@@ -1,0 +1,14 @@
+services:
+  next-web:
+    build: .
+    container_name: stock-web
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+      - NODE_ENV=${NODE_ENV}
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
