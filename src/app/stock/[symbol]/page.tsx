@@ -48,13 +48,16 @@ import StockInfoTab from '@/components/stock/StockInfoTab';
 import { getLatestDividendApi } from '@/lib/api/dividend';
 import FormattedNumberDisplay from '@/components/FormattedNumberDisplay';
 import NumericInput from '@/components/NumericInput';
+import DividendAnalysis from '@/components/analysis/DividendAnalysis';
+import { getAnalyzeTdtsApi, getTechnicalHistoryApi } from '@/lib/api/analysis';
+import TechnicalAnalysisView from '@/components/analysis/TechnicalAnalysis';
 
 
 ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, Tooltip, Legend);
 
 type StockChartData = ChartData<'line', number[], string>; // labels เป็น string, data เป็น number
 
-type InfoTabKey = 'info' | 'dividend' | 'history' | 'analysis';
+type InfoTabKey = 'info' | 'dividend' | 'history' | 'analysis' | 'technical';
 
 
 export default function StockDetailPage() {
@@ -234,7 +237,6 @@ export default function StockDetailPage() {
         // เวลาใช้งานเช่นแสดงราคาผลต่างตาม timeframe
     const currentSummary = summary?.summary[timeframe];
 
-
     useEffect(() => {
         const fetchChartData = async () => {
             try {
@@ -273,6 +275,47 @@ export default function StockDetailPage() {
         setTradePrice(latestPrice);
     }
     }, [latestPrice]);
+
+    //ก้อนวิเคราะห์ (แนะนำ: โหลดเฉพาะเมื่อ User ต้องการดู)
+    const [analysisData, setAnalysisData] = useState(null);
+    const [isAnalysisLoading, setIsAnalysisLoading] = useState(false);
+    const [technicalData, setTechnicalData] = useState(null);
+    const [isTechnicalLoading, setIsTechnicalLoading] = useState(false);
+
+    useEffect(() => {
+        setAnalysisData(null); 
+        setTechnicalData(null)
+    }, [symbol]);
+    //โหลดข้อมูล (Lazy Load เมื่อเปิด Tab เท่านั้น)
+    useEffect(() => {
+        const fetchAnalysis = async () => {
+            // โหลดเฉพาะเมื่ออยู่หน้า Tab Analysis และข้อมูลยังไม่มี
+            if (activeTab === 'analysis' && !analysisData && symbol) {
+                setIsAnalysisLoading(true);
+                try {
+                    const res = await getAnalyzeTdtsApi(symbol);
+                    setAnalysisData(res);
+                } catch (err) {
+                    setError("โหลดบทวิเคราะห์ไม่สำเร็จ");
+                } finally {
+                    setIsAnalysisLoading(false);
+                }
+            }
+            else if (activeTab === 'technical' && !technicalData && symbol) {
+                setIsTechnicalLoading(true);
+                try {
+                    const res = await getTechnicalHistoryApi(symbol);
+                    setTechnicalData(res);
+                } catch (err) {
+                    setError("โหลดวิเคราะห์กราฟเทคนิคไม่สำเร็จ");
+                } finally {
+                    setIsTechnicalLoading(false);
+                }
+            }
+        };
+
+        fetchAnalysis();
+    }, [symbol, activeTab, analysisData, technicalData]);
 
 
     const [isLoading, setIsLoading] = useState(true);
@@ -383,11 +426,12 @@ export default function StockDetailPage() {
                         <Tab label="ข้อมูลเงินปันผล" value="dividend" />
                         <Tab label="ราคาย้อนหลัง" value="history" />
                         <Tab label="บทวิเคราะห์" value="analysis" />
+                        <Tab label="กราฟเทคนิค" value="technical" />
                     </Tabs>
 
                     <CardContent>
                         {/* -------------------- Tab Content -------------------- */}
-                        {/* A. ข้อมูลหลักทรัพย์ (เดิม) */}
+                        {/* 1. ข้อมูลหลักทรัพย์ */}
                         {activeTab === 'info' && (
                             <Box sx={{ minHeight: 300 }}>
                                 <StockInfoTab
@@ -399,28 +443,60 @@ export default function StockDetailPage() {
                             </Box>
                         )}
 
-                        {/* B. ข้อมูลเงินปันผล (เดิม) */}
+                        {/* 2. ข้อมูลเงินปันผล */}
                         {activeTab === 'dividend' && (
                             <Box sx={{ minHeight: 300 }}>
                                 <DividendHistoryTable stockSymbol={stockSymbol} />
                             </Box>
                         )}
                         
-                        {/* C. ราคาย้อนหลัง (ต้องสร้าง Component ใหม่) */}
+                        {/* 3. ราคาย้อนหลัง */}
                         {activeTab === 'history' && (
                             <Box sx={{ minHeight: 300 }}>
                                 <PriceHistoryTable stockSymbol={stockSymbol} />
                             </Box>
                         )}
 
-                        {/* D. บทวิเคราะห์ (ต้องสร้าง Component ใหม่) */}
+                        {/* 4. บทวิเคราะห์ */}
                         {activeTab === 'analysis' && (
                             <Box sx={{ minHeight: 300 }}>
                                 <Typography variant="subtitle1">บทวิเคราะห์และข้อมูลทางการเงิน</Typography>
-                                {/* 💡 ที่นี่คุณจะ Render Component <StockAnalysis symbol={stockSymbol} /> */}
-                                <Alert severity="warning" sx={{ mt: 2 }}>
-                                    (Component StockAnalysis จะแสดง P/E, P/BV, ข้อมูลทางการเงิน)
-                                </Alert>
+                                {isAnalysisLoading ? (
+                                    // แสดง Loading เฉพาะส่วน Analysis
+                                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 5 }}>
+                                        <CircularProgress />
+                                        <Typography sx={{ mt: 2 }}>กำลังวิเคราะห์ข้อมูล TDTS Scoring...</Typography>
+                                    </Box>
+                                ) : analysisData ? (
+                                    // ส่งข้อมูล raw_data จากก้อน analysisData เข้าไป
+                                    <DividendAnalysis 
+                                        data={analysisData.data?.clean_data || []} 
+                                        source={analysisData.source}
+                                    />
+                                ) : (
+                                    <Alert severity="info">ไม่พบข้อมูลบทวิเคราะห์สำหรับหุ้นตัวนี้</Alert>
+                                )}
+                                
+                            </Box>
+                        )}
+                        {/* 5. กราฟเทคนิค */}
+                        {activeTab === 'technical' && (
+                            <Box sx={{ minHeight: 300 }}>
+                                <Typography variant="subtitle1">วิเคราะห์กราฟทางการเทคนิค</Typography>
+                                {isAnalysisLoading ? (
+                                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 5 }}>
+                                        <CircularProgress />
+                                        <Typography sx={{ mt: 2 }}>กำลังวิเคราะห์ข้อมูล...</Typography>
+                                    </Box>
+                                ) : technicalData ? (
+                                    // ส่งข้อมูล raw_data จากก้อน analysisData เข้าไป
+                                    <TechnicalAnalysisView
+                                        data={technicalData.data || []}                                   
+                                        symbol={symbol}
+                                    />
+                                ) : (
+                                    <Alert severity="info">ไม่พบข้อมูลทางเทคนิคสำหรับหุ้นตัวนี้</Alert>
+                                )}
                             </Box>
                         )}
 

@@ -6,14 +6,14 @@ import { HistoricalPrice } from "@/types/stock";
 import { Dividend } from '@/types/dividend';
 import  FormattedNumberDisplay from '../FormattedNumberDisplay';
 
-// 💡 NEW PROPS INTERFACE: สะท้อนการ Fetch Data แยกส่วน
+//NEW PROPS INTERFACE: สะท้อนการ Fetch Data แยกส่วน
 interface StockInfoTabProps {
     stockSymbol: string;
     
-    // 💡 ข้อมูลราคาล่าสุด (HistoricalPrice Object ทั้งก้อน)
+    //ข้อมูลราคาล่าสุด (HistoricalPrice Object ทั้งก้อน)
     latestHistoricalPrice: HistoricalPrice | null; 
     
-    // currentSummary (ยังเก็บไว้สำหรับการแสดงสถิติประจำ timeframe อื่นๆ ถ้าจำเป็น)
+    //currentSummary (ยังเก็บไว้สำหรับการแสดงสถิติประจำ timeframe อื่นๆ ถ้าจำเป็น)
     currentSummary: {
         open?: number;
         high?: number;
@@ -23,7 +23,7 @@ interface StockInfoTabProps {
         percentChange?: number;
     } | undefined; 
     
-    // 💡 ข้อมูลปันผลล่าสุด (Dividend Object ทั้งก้อน)
+    //ข้อมูลปันผลล่าสุด (Dividend Object ทั้งก้อน)
     latestDividend: Dividend | null; 
 }
 
@@ -39,7 +39,7 @@ export default function StockInfoTab({
     stockSymbol, 
     latestHistoricalPrice, // 💡 ใช้ตัวนี้แทน latestPrice
     currentSummary, 
-    latestDividend // 💡 ใช้ตัวนี้แทน summary
+    latestDividend //ใช้ตัวนี้แทน summary
 }: StockInfoTabProps) {
 
     // 1. ดึงราคาปิดล่าสุดสำหรับคำนวณ Yield
@@ -66,7 +66,7 @@ export default function StockInfoTab({
                     </Typography>
                     <Divider sx={{ mb: 1 }} />
                     
-                    {/* 💡 ใช้ข้อมูลจาก latestHistoricalPrice Object */}
+                    {/* ใช้ข้อมูลจาก latestHistoricalPrice Object */}
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                         <DetailItem 
                             label="ราคาปิดล่าสุด" 
@@ -104,7 +104,7 @@ export default function StockInfoTab({
                     </Typography>
                     <Divider sx={{ mb: 1 }} />
 
-                    {/* 💡 ใช้ข้อมูลจาก latestDividend Object */}
+                    {/* ใช้ข้อมูลจาก latestDividend Object */}
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                         <DetailItem 
                             label="เงินปันผลต่อหุ้น" 
