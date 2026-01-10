@@ -86,3 +86,53 @@ export type StockSummary = {
   latestPrice: number;
   summary: Partial<Record<Timeframe, StockSummaryItem>>;
 };
+
+
+//transaction Buy
+// รายละเอียดประกาศปันผล
+export interface DividendAnnouncement {
+  dividend_id: string;
+  stock_symbol: string;
+  announcement_date: string;
+  ex_dividend_date: string;
+  record_date: string;
+  payment_date: string;
+  dividend_per_share: number;
+  source_of_dividend: string;
+  calculation_status: string;
+  calculated_at: string;
+}
+
+// ข้อมูลภาษีของหุ้น
+export interface StockTaxInfo {
+  appliedTaxRate: number;
+  isBoi: boolean;
+  taxCreditFactor: number;
+}
+
+// ผลลัพธ์การคำนวณเงินที่จะได้รับ
+export interface DividendCalculation {
+  shares: number;
+  grossDividend: number;
+  withholdingTax: number;
+  netDividend: number;
+  estimatedTaxCredit: number;
+  totalBenefitWithCredit: number;
+}
+
+// ก้อนสิทธิประโยชน์ (ตัวแปรภายในก้อนใหญ่)
+export interface EstimatedDividend {
+  dividendInfo: DividendAnnouncement;
+  type: "ACTUAL" | "PREDICTED";
+  stockTaxInfo: StockTaxInfo;
+  calculation: DividendCalculation;
+}
+
+// Response หลักจาก API (ก้อนที่เก็บลง State)
+export interface PurchaseMetadataResponse {
+  symbol: string;
+  purchaseDate: string;
+  pricePerShare: number;
+  totalCost: number;
+  estimatedDividend: EstimatedDividend | null; // เป็น null ได้ถ้าไม่ทันรอบปันผล
+}

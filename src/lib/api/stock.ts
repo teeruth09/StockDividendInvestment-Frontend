@@ -236,3 +236,27 @@ export async function fetchPriceByDate(
   
   return data.price; 
 }
+
+// ข้อมูลสำหรับประกอบการตัดสินใจซื้อ (Price + Dividend Benefit)
+export async function getPurchaseMetadataApi(
+    symbol: string,
+    date: string,
+    shares: number
+) {
+    const url = new URL(`${process.env.NEXT_PUBLIC_API_URL}/stock/${symbol}/purchase-metadata`);
+    url.searchParams.append("date", date);
+    url.searchParams.append("shares", shares.toString());
+
+    const res = await fetch(url.toString(), {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+    });
+
+    if (!res.ok) {
+        const error = await res.json().catch(() => ({}));
+        throw new Error(error.message || "ไม่สามารถดึงข้อมูลประกอบการซื้อได้");
+    }
+
+    return res.json();
+}
