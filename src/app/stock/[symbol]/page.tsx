@@ -19,7 +19,9 @@ import {
   DialogContentText,
   DialogActions,
   Snackbar,
+  Stack,
 } from "@mui/material";
+import MuiTooltip from '@mui/material/Tooltip';
 import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -27,13 +29,13 @@ import {
   CategoryScale,
   LinearScale,
   PointElement,
-  Tooltip,
+  Tooltip as ChartTooltip,
   Legend,
   ChartData,
 } from "chart.js";
 import { useEffect, useState } from 'react';
-import { fetchPriceByDate, getLatestPriceApi, getStockChartApi, getStockSummaryApi } from '@/lib/api/stock';
-import { HistoricalPrice, StockSummary } from '@/types/stock';
+import { fetchPriceByDate, getLatestPriceApi, getPurchaseMetadataApi, getStockChartApi, getStockSummaryApi } from '@/lib/api/stock';
+import { HistoricalPrice, PurchaseMetadataResponse, StockSummary } from '@/types/stock';
 import { Dividend } from '@/types/dividend';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -48,13 +50,18 @@ import StockInfoTab from '@/components/stock/StockInfoTab';
 import { getLatestDividendApi } from '@/lib/api/dividend';
 import FormattedNumberDisplay from '@/components/FormattedNumberDisplay';
 import NumericInput from '@/components/NumericInput';
+import DividendAnalysis from '@/components/analysis/DividendAnalysis';
+import { getAnalyzeTdtsApi, getTechnicalHistoryApi } from '@/lib/api/analysis';
+import TechnicalAnalysisView from '@/components/analysis/TechnicalAnalysis';
+import { formatDate } from '@/lib/helpers/format';
+import { InfoOutlined, Psychology, Warning } from '@mui/icons-material';
 
 
-ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, Tooltip, Legend);
+ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, ChartTooltip, Legend);
 
 type StockChartData = ChartData<'line', number[], string>; // labels เป็น string, data เป็น number
 
-type InfoTabKey = 'info' | 'dividend' | 'history' | 'analysis';
+type InfoTabKey = 'info' | 'dividend' | 'history' | 'analysis' | 'technical';
 
 
 export default function StockDetailPage() {
@@ -184,25 +191,6 @@ export default function StockDetailPage() {
     const handleConfirmOpen = () => setIsConfirmOpen(true);
     const handleConfirmClose = () => setIsConfirmOpen(false);
   
-    // useEffect(() => {
-    //     const fetchSummary = async () => {
-    //         setIsLoading(true); // เริ่ม Loading
-    //         setError(null);
-    //         try{
-    //             const data = await getStockSummaryApi(symbol);
-    //             setSummary(data);
-    //             setStockName(data.name)
-    //             setLatestPrice(data.latestPrice)
-    //         } catch (err){
-    //             console.error("Failed to fetch summary:", err);
-    //             setError("ไม่สามารถดึงข้อมูลสรุปหลักทรัพย์ได้"); // แสดง Error
-    //         } finally {
-    //             setIsLoading(false)
-    //         }
-    //     };
-    //     fetchSummary();
-    // }, [symbol]);
-
     useEffect(() => {
         const fetchData = async () => {
             setIsLoading(true); 
@@ -233,7 +221,6 @@ export default function StockDetailPage() {
 
         // เวลาใช้งานเช่นแสดงราคาผลต่างตาม timeframe
     const currentSummary = summary?.summary[timeframe];
-
 
     useEffect(() => {
         const fetchChartData = async () => {
@@ -274,6 +261,86 @@ export default function StockDetailPage() {
     }
     }, [latestPrice]);
 
+    //ก้อนวิเคราะห์ (แนะนำ: โหลดเฉพาะเมื่อ User ต้องการดู)
+    const [analysisData, setAnalysisData] = useState(null);
+    const [isAnalysisLoading, setIsAnalysisLoading] = useState(false);
+    const [technicalData, setTechnicalData] = useState(null);
+    const [isTechnicalLoading, setIsTechnicalLoading] = useState(false);
+
+    useEffect(() => {
+        setAnalysisData(null); 
+        setTechnicalData(null)
+    }, [symbol]);
+    //โหลดข้อมูล (Lazy Load เมื่อเปิด Tab เท่านั้น)
+    useEffect(() => {
+        const fetchAnalysis = async () => {
+            // โหลดเฉพาะเมื่ออยู่หน้า Tab Analysis และข้อมูลยังไม่มี
+            if (activeTab === 'analysis' && !analysisData && symbol) {
+                setIsAnalysisLoading(true);
+                try {
+                    const res = await getAnalyzeTdtsApi(symbol);
+                    setAnalysisData(res);
+                } catch (err) {
+                    setError("โหลดบทวิเคราะห์ไม่สำเร็จ");
+                } finally {
+                    setIsAnalysisLoading(false);
+                }
+            }
+            else if (activeTab === 'technical' && !technicalData && symbol) {
+                setIsTechnicalLoading(true);
+                try {
+                    const res = await getTechnicalHistoryApi(symbol);
+                    setTechnicalData(res);
+                } catch (err) {
+                    setError("โหลดวิเคราะห์กราฟเทคนิคไม่สำเร็จ");
+                } finally {
+                    setIsTechnicalLoading(false);
+                }
+            }
+        };
+
+        fetchAnalysis();
+    }, [symbol, activeTab, analysisData, technicalData]);
+
+    
+    const [purchaseBenefit, setPurchaseBenefit] = useState<PurchaseMetadataResponse | null>(null);
+    const [isInitialLoading, setIsInitialLoading] = useState(false);
+
+    const handleTradeDateChange = async (newDate: Date | null) => {
+        setTradeDate(newDate);
+        if (!newDate || !stockSymbol) {
+            setPurchaseBenefit(null);
+            return;
+        }
+        setIsInitialLoading(true);
+        try {
+            const dateStr = formatDate(newDate); // ใช้ Helper Function ของคุณแปลงเป็น YYYY-MM-DD
+            
+            if (tradeMode === 0) { 
+                // โหมด "ซื้อ": เรียก API ใหม่ที่รวมทั้ง ราคา และ ปันผล
+                const result : PurchaseMetadataResponse = await getPurchaseMetadataApi(stockSymbol, dateStr, tradeQty || 100);
+                setTradePrice(result.pricePerShare);
+                setPurchaseBenefit(result);
+            } else {
+                // โหมด "ขาย": เรียก API เดิมดึงแค่ราคา
+                const price = await fetchPriceByDate(stockSymbol, newDate);
+                setTradePrice(price);
+                setPurchaseBenefit(null);
+            }
+        } catch (err) {
+            console.error("Error fetching trade data:", err);
+            setTradePrice(null);
+            setPurchaseBenefit(null);
+        } finally {
+            setIsInitialLoading(false);
+        }
+        
+    };
+    useEffect(() => {
+        if (tradeMode === 0 && tradeDate && tradeQty > 0) {
+            handleTradeDateChange(tradeDate);
+        }
+    }, [tradeQty]); // เมื่อจำนวนหุ้นเปลี่ยน ให้ไปคำนวณปันผลใหม่
 
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -383,11 +450,12 @@ export default function StockDetailPage() {
                         <Tab label="ข้อมูลเงินปันผล" value="dividend" />
                         <Tab label="ราคาย้อนหลัง" value="history" />
                         <Tab label="บทวิเคราะห์" value="analysis" />
+                        <Tab label="กราฟเทคนิค" value="technical" />
                     </Tabs>
 
                     <CardContent>
                         {/* -------------------- Tab Content -------------------- */}
-                        {/* A. ข้อมูลหลักทรัพย์ (เดิม) */}
+                        {/* 1. ข้อมูลหลักทรัพย์ */}
                         {activeTab === 'info' && (
                             <Box sx={{ minHeight: 300 }}>
                                 <StockInfoTab
@@ -399,28 +467,58 @@ export default function StockDetailPage() {
                             </Box>
                         )}
 
-                        {/* B. ข้อมูลเงินปันผล (เดิม) */}
+                        {/* 2. ข้อมูลเงินปันผล */}
                         {activeTab === 'dividend' && (
                             <Box sx={{ minHeight: 300 }}>
                                 <DividendHistoryTable stockSymbol={stockSymbol} />
                             </Box>
                         )}
                         
-                        {/* C. ราคาย้อนหลัง (ต้องสร้าง Component ใหม่) */}
+                        {/* 3. ราคาย้อนหลัง */}
                         {activeTab === 'history' && (
                             <Box sx={{ minHeight: 300 }}>
                                 <PriceHistoryTable stockSymbol={stockSymbol} />
                             </Box>
                         )}
 
-                        {/* D. บทวิเคราะห์ (ต้องสร้าง Component ใหม่) */}
+                        {/* 4. บทวิเคราะห์ */}
                         {activeTab === 'analysis' && (
                             <Box sx={{ minHeight: 300 }}>
                                 <Typography variant="subtitle1">บทวิเคราะห์และข้อมูลทางการเงิน</Typography>
-                                {/* 💡 ที่นี่คุณจะ Render Component <StockAnalysis symbol={stockSymbol} /> */}
-                                <Alert severity="warning" sx={{ mt: 2 }}>
-                                    (Component StockAnalysis จะแสดง P/E, P/BV, ข้อมูลทางการเงิน)
-                                </Alert>
+                                {isAnalysisLoading ? (
+                                    // แสดง Loading เฉพาะส่วน Analysis
+                                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 5 }}>
+                                        <CircularProgress />
+                                        <Typography sx={{ mt: 2 }}>กำลังวิเคราะห์ข้อมูล TDTS Scoring...</Typography>
+                                    </Box>
+                                ) : analysisData ? (
+                                    <DividendAnalysis 
+                                        data={analysisData.data?.clean_data || []} 
+                                        source={analysisData.source}
+                                    />
+                                ) : (
+                                    <Alert severity="info">ไม่พบข้อมูลบทวิเคราะห์สำหรับหุ้นตัวนี้</Alert>
+                                )}
+                                
+                            </Box>
+                        )}
+                        {/* 5. กราฟเทคนิค */}
+                        {activeTab === 'technical' && (
+                            <Box sx={{ minHeight: 300 }}>
+                                <Typography variant="subtitle1">วิเคราะห์กราฟทางการเทคนิค</Typography>
+                                {isAnalysisLoading ? (
+                                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 5 }}>
+                                        <CircularProgress />
+                                        <Typography sx={{ mt: 2 }}>กำลังวิเคราะห์ข้อมูล...</Typography>
+                                    </Box>
+                                ) : technicalData ? (
+                                    <TechnicalAnalysisView
+                                        data={technicalData.data || []}                                   
+                                        symbol={symbol}
+                                    />
+                                ) : (
+                                    <Alert severity="info">ไม่พบข้อมูลทางเทคนิคสำหรับหุ้นตัวนี้</Alert>
+                                )}
                             </Box>
                         )}
 
@@ -473,12 +571,13 @@ export default function StockDetailPage() {
                         <DatePicker
                             label="เลือกวันที่ดำเนินการ"
                             value={tradeDate}
-                            onChange={(newDate) => {
-                                setTradeDate(newDate);
-                                if (newDate) {
-                                fetchPriceByDate(stockSymbol, newDate).then(setTradePrice);
-                                }
-                            }}
+                            onChange={handleTradeDateChange}
+                            // onChange={(newDate) => {
+                            //     setTradeDate(newDate);
+                            //     if (newDate) {
+                            //     fetchPriceByDate(stockSymbol, newDate).then(setTradePrice);
+                            //     }
+                            // }}
                             slotProps={{
                                 textField: {
                                 fullWidth: true,
@@ -488,20 +587,6 @@ export default function StockDetailPage() {
                         </LocalizationProvider>
 
                         <TextField fullWidth type="number" label="จำนวนหุ้น" value={tradeQty} onChange={(e) => setTradeQty(Number(e.target.value))} />
-                        {/* <TextField
-                            fullWidth
-                            type="number"
-                            label="ราคาต่อหุ้น (บาท)"
-                            //value={tradePrice ?? latestPrice ?? ""}
-                            value= 
-                                {<FormattedNumberDisplay 
-                                    value={tradePrice ?? latestPrice ?? ""}
-                                    decimalScale={2} 
-                                />}
-                            onChange={(e) => setTradePrice(Number(e.target.value))}
-                            disabled={true}
-                            InputLabelProps={{ shrink: true }}
-                        /> */}
                         <NumericInput
                             label="ราคาต่อหุ้น (บาท)"
                             value={tradePrice ?? latestPrice ?? ""} 
@@ -566,7 +651,129 @@ export default function StockDetailPage() {
                                 </Typography>
                             </Box>
                         </Box>
+                        {tradeMode === 0 && purchaseBenefit?.estimatedDividend && (
+                            <Box sx={{ 
+                                mt: 1, 
+                                p: 1.5, 
+                                borderRadius: 1, 
+                                bgcolor: '#2E7D32',   
+                                color: 'white',
+                                border: '1px dashed rgba(255,255,255,0.3)'
+                            }}>
+                                <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
+                                    <Typography variant="body2" fontWeight="bold">สิทธิประโยชน์ที่คุณจะได้รับ</Typography>
+                                </Stack>
+                                {purchaseBenefit.estimatedDividend.type === 'PREDICTED' && (
+                                    <Box sx={{ mb: 1.5 }}>
+                                        <Alert 
+                                            severity="warning" 
+                                            icon={<Warning fontSize="small" sx={{ color: '#ed6c02' }} />}
+                                            sx={{ 
+                                                bgcolor: '#FFFF', 
+                                                color: '#663c00', // สีตัวอักษรโทนน้ำตาลเข้ม/ส้ม สไตล์ Warning
+                                                border: '1px solid #ffe2b7', // เส้นขอบสีส้มอ่อน
+                                                borderRadius: '8px',
+                                                '& .MuiAlert-message': { 
+                                                    width: '100%',
+                                                    padding: '4px 0' 
+                                                },
+                                                boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
+                                            }}
+                                        >
+                                        <Typography variant="caption" sx={{ fontWeight: 'bold', display: 'block' }}>
+                                            * ข้อมูลนี้เป็นการคาดการณ์โดยระบบ
+                                        </Typography>
+                                        <Typography variant="caption" sx={{ fontSize: '0.7rem', opacity: 0.8, display: 'block' }}>
+                                            ตัวเลขอาจมีการเปลี่ยนแปลงเมื่อบริษัทประกาศอย่างเป็นทางการ
+                                        </Typography>
+                                        {/* <Typography variant="caption" sx={{ fontSize: '0.7rem', opacity: 0.8 }}>
+                                            * อ้างอิงจาก model version {purchaseBenefit.estimatedDividend.dividendInfo.model_version}
+                                        </Typography> */}
+                                        </Alert>
+                                    </Box>
+                                )}
+                                
+                                <Stack spacing={0.5}>
+                                    {/* 1. วันที่ XD */}
+                                    <Box display="flex" justifyContent="space-between">
+                                        <Typography variant="caption" sx={{ opacity: 0.9 }}>
+                                            วันที่ XD:
+                                            <MuiTooltip title="ต้องถือหุ้นก่อนวันนี้ จึงจะมีสิทธิรับปันผล">
+                                                <InfoOutlined fontSize="inherit" sx={{ ml: 0.5 }} />
+                                            </MuiTooltip>
+                                        </Typography>
+                                        <Typography variant="caption" fontWeight="bold">
+                                            {new Date(purchaseBenefit.estimatedDividend.dividendInfo.ex_dividend_date).toLocaleDateString('th-TH')}
+                                        </Typography>
+                                    </Box>
+                                    {/* 2. ปันผลก่อนหัก */}
+                                    <Box display="flex" justifyContent="space-between">
+                                        <Typography variant="caption" sx={{ opacity: 0.9 }}>ปันผลรวม:</Typography>
+                                        <Typography variant="caption" fontWeight="bold">
+                                            <FormattedNumberDisplay 
+                                                value={purchaseBenefit.estimatedDividend.calculation.grossDividend}
+                                                decimalScale={2} 
+                                                suffix=" บาท" 
+                                            />
+                                        </Typography>
+                                    </Box>
+                                    {/* 3. ภาษีที่หัก ณ ที่จ่าย */}
+                                    <Box display="flex" justifyContent="space-between">
+                                        <Typography variant="caption" sx={{ opacity: 0.9 }}>ภาษีที่หัก ณ ที่จ่าย (10%):</Typography>
+                                        <Typography variant="caption" fontWeight="bold">
+                                            <FormattedNumberDisplay 
+                                                value={purchaseBenefit.estimatedDividend.calculation.withholdingTax}
+                                                decimalScale={2} 
+                                                suffix=" บาท" 
+                                            />
+                                        </Typography>
+                                    </Box>
+                                    
+                                    {/* 4. ปันผลรับสุทธิ */}
+                                    <Box 
+                                        display="flex" 
+                                        justifyContent="space-between" 
+                                        sx={{ 
+                                            mt: 1,
+                                            py: 0.5,
+                                            borderTop: '1px dashed rgba(255,255,255,0.3)'
+                                        }}
+                                    >
+                                        <Typography variant="body2" sx={{ opacity: 0.9 }}>ปันผลรับสุทธิ (หัก 10%):</Typography>
+                                        <Typography variant="body1" fontWeight="bold">
+                                            <FormattedNumberDisplay 
+                                                value={purchaseBenefit.estimatedDividend.calculation.netDividend}
+                                                decimalScale={2} 
+                                                suffix=" บาท" 
+                                            />
+                                        </Typography>
+                                    </Box>
 
+                                    {/* 5. เครดิตภาษี */}
+                                    {!purchaseBenefit.estimatedDividend.stockTaxInfo.isBoi && 
+                                    purchaseBenefit.estimatedDividend.calculation.estimatedTaxCredit > 0 && (
+                                        <Box display="flex" justifyContent="space-between">
+                                            <Typography variant="body2" sx={{ opacity: 0.9 }}>เครดิตภาษีคาดการณ์:</Typography>
+                                            <Typography variant="body1" fontWeight="bold" sx={{ color: '#FFEB3B' }}>
+                                                + 
+                                                <FormattedNumberDisplay 
+                                                    value={purchaseBenefit.estimatedDividend.calculation.estimatedTaxCredit} 
+                                                    decimalScale={2} 
+                                                    suffix=" บาท" 
+                                                />
+                                            </Typography>
+                                        </Box>
+                                    )}
+                                </Stack>
+                            </Box>
+                        )}
+
+                        {/* กรณีเลือกวันที่แล้วไม่มีปันผล (estimatedDividend เป็น null) */}
+                        {tradeMode === 0 && tradeDate && !purchaseBenefit?.estimatedDividend && !isInitialLoading && (
+                            <Typography variant="caption" color="text.secondary" sx={{ textAlign: 'center', display: 'block', mt: 1 }}>
+                                * ไม่พบสิทธิปันผลที่ประกาศในช่วงวันที่เลือก
+                            </Typography>
+                        )}
                         <Button 
                             variant="contained" 
                             fullWidth

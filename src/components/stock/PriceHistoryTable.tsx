@@ -182,7 +182,10 @@ export default function PriceHistoryTable({ stockSymbol }: PriceHistoryTableProp
                                     {/* Change */}
                                     <TableCell 
                                         align="right" 
-                                        style={{ color: getChangeColor(price.priceChange) }}
+                                        style={{ 
+                                            color: getChangeColor(price.percentChange),
+                                            fontWeight: 600,
+                                        }}
                                     >
                                         {/* {price.priceChange !== null && price.priceChange !== undefined ? 
                                             `${price.priceChange >= 0 ? "+" : ""}${price.priceChange.toFixed(2)}` : '-'} */}
@@ -195,7 +198,10 @@ export default function PriceHistoryTable({ stockSymbol }: PriceHistoryTableProp
                                     </TableCell>
                                     <TableCell 
                                         align="right" 
-                                        style={{ color: getChangeColor(price.percentChange) }}
+                                        style={{ 
+                                            color: getChangeColor(price.percentChange),
+                                            fontWeight: 600,
+                                        }}
                                     >
                                         {/* {price.percentChange !== null && price.percentChange !== undefined ? 
                                             `${price.percentChange >= 0 ? "+" : ""}${price.percentChange.toFixed(2)}%` : '-'} */}
