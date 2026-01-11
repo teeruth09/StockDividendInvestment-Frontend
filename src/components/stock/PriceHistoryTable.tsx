@@ -135,7 +135,13 @@ export default function PriceHistoryTable({ stockSymbol }: PriceHistoryTableProp
                             historyData.map((price) => (
                                 <TableRow key={price.priceDate.toISOString()}>
                                     {/* Date */}
-                                    <TableCell>{price.priceDate.toLocaleDateString('th-TH')}</TableCell>
+                                    <TableCell>
+                                        {new Date(price.priceDate).toLocaleDateString("th-TH", {
+                                            year: "numeric",
+                                            month: "short",
+                                            day: "numeric",
+                                        })}                                     
+                                    </TableCell>
                                     
                                     {/* Prices */}
                                     <TableCell align="right">

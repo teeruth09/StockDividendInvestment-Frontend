@@ -78,10 +78,34 @@ export default function DividendHistoryTable({ stockSymbol }: DividendHistoryTab
                             historyData.map((div) => (
                                 <TableRow key={div.dividendId}>
                                     {/* วันที่ต่างๆ ถูกแปลงเป็น Date Object แล้ว */}
-                                    <TableCell>{div.announcementDate.toLocaleDateString('th-TH')}</TableCell>
-                                    <TableCell>{div.exDividendDate.toLocaleDateString('th-TH')}</TableCell>
-                                    <TableCell>{div.recordDate.toLocaleDateString('th-TH')}</TableCell>
-                                    <TableCell>{div.paymentDate.toLocaleDateString('th-TH')}</TableCell>
+                                    <TableCell>
+                                        {new Date(div.announcementDate).toLocaleDateString("th-TH", {
+                                            year: "numeric",
+                                            month: "short",
+                                            day: "numeric",
+                                        })}    
+                                    </TableCell>
+                                    <TableCell>
+                                        {new Date(div.exDividendDate).toLocaleDateString("th-TH", {
+                                            year: "numeric",
+                                            month: "short",
+                                            day: "numeric",
+                                        })}    
+                                    </TableCell>
+                                    <TableCell>
+                                        {new Date(div.recordDate).toLocaleDateString("th-TH", {
+                                            year: "numeric",
+                                            month: "short",
+                                            day: "numeric",
+                                        })}    
+                                    </TableCell>
+                                    <TableCell>
+                                        {new Date(div.paymentDate).toLocaleDateString("th-TH", {
+                                            year: "numeric",
+                                            month: "short",
+                                            day: "numeric",
+                                        })}    
+                                    </TableCell>
                                     
                                     {/* ปันผลต่อหุ้น */}
                                     <TableCell align="right" style={{ fontWeight: 600 }}>

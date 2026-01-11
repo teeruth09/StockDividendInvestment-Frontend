@@ -51,7 +51,7 @@ import { getLatestDividendApi } from '@/lib/api/dividend';
 import FormattedNumberDisplay from '@/components/FormattedNumberDisplay';
 import NumericInput from '@/components/NumericInput';
 import DividendAnalysis from '@/components/analysis/DividendAnalysis';
-import { getAnalyzeTdtsApi, getTechnicalHistoryApi } from '@/lib/api/analysis';
+import { getAnalyzeTdtsApi, getCombinedAnalysisApi, getTechnicalHistoryApi } from '@/lib/api/analysis';
 import TechnicalAnalysisView from '@/components/analysis/TechnicalAnalysis';
 import { formatDate } from '@/lib/helpers/format';
 import { InfoOutlined, Psychology, Warning } from '@mui/icons-material';
@@ -278,7 +278,7 @@ export default function StockDetailPage() {
             if (activeTab === 'analysis' && !analysisData && symbol) {
                 setIsAnalysisLoading(true);
                 try {
-                    const res = await getAnalyzeTdtsApi(symbol);
+                    const res = await getCombinedAnalysisApi(symbol);
                     setAnalysisData(res);
                 } catch (err) {
                     setError("โหลดบทวิเคราะห์ไม่สำเร็จ");
@@ -493,8 +493,8 @@ export default function StockDetailPage() {
                                     </Box>
                                 ) : analysisData ? (
                                     <DividendAnalysis 
-                                        data={analysisData.data?.clean_data || []} 
-                                        source={analysisData.source}
+                                        data={analysisData.data || []} 
+                                        //source={analysisData.source}
                                     />
                                 ) : (
                                     <Alert severity="info">ไม่พบข้อมูลบทวิเคราะห์สำหรับหุ้นตัวนี้</Alert>

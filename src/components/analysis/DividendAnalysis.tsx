@@ -16,8 +16,8 @@ import {
 import FormattedNumberDisplay from "../FormattedNumberDisplay";
 
 // แปลง Interface ให้เป็นตามรูปแบบข้อมูลที่ได้จาก API (และรองรับการ Map)
-interface DividendAnalysisData {
-  stock: string;
+interface DividendAnalysisData{
+  symbol: string;
   year: number;
   exDate: string;
   dps: number;
@@ -25,7 +25,10 @@ interface DividendAnalysisData {
   pEx: number;
   dyPercent: number;
   pdPercent: number;
-  tDts: number;
+  tdtsScore: number;
+  temaPrice: number;
+  retBfTema: number;
+  retAfTema: number;
 }
 
 interface DividendAnalysisProps {
@@ -37,15 +40,18 @@ export default function DividendAnalysis({ data, isLoading }: DividendAnalysisPr
   
   // 1. Mapping ข้อมูลจาก Snake_Case/PascalCase เป็น camelCase ตามที่คุณต้องการ
   const mappedData: DividendAnalysisData[] = data.map((item) => ({
-    stock: item.Stock,
-    year: item.Year,
-    exDate: item.Ex_Date,
-    dps: item.DPS,
-    pCum: item.P_cum,
-    pEx: item.P_ex,
-    dyPercent: item["DY (%)"],
-    pdPercent: item["PD (%)"],
-    tDts: item["T-DTS"],
+    symbol: item.symbol,
+    year: item.year,
+    exDate: item.exDate,
+    dps: item.dps,
+    pCum: item.pCum,
+    pEx: item.pEx,
+    dyPercent: item.dyPercent,
+    pdPercent: item.pdPercent,
+    tdtsScore: item.tdtsScore,
+    temaPrice: item.temaPrice,
+    retBfTema: item.retBfTema,
+    retAfTema: item.retAfTema,
   }));
 
   const getChangeColor = (value: number | null | undefined) => {
@@ -68,6 +74,12 @@ export default function DividendAnalysis({ data, isLoading }: DividendAnalysisPr
               <TableCell align="right" sx={{ bgcolor: '#f5f5f5' }}>Yield (%)</TableCell>
               <TableCell align="right" sx={{ bgcolor: '#f5f5f5' }}>ราคาก่อน XD (P_cum)</TableCell>
               <TableCell align="right" sx={{ bgcolor: '#f5f5f5' }}>ราคาหลัง XD (P_ex)</TableCell>
+              
+              {/* โซน TEMA ใส่สีพื้นหลัง Header ต่างออกไปเล็กน้อย */}
+              <TableCell align="right" sx={{ bgcolor: '#F0F4F8' }}>TEMA Price</TableCell>
+              <TableCell align="right" sx={{ bgcolor: '#F0F4F8' }}>Ret Before (%)</TableCell>
+              <TableCell align="right" sx={{ bgcolor: '#F0F4F8' }}>Ret After (%)</TableCell>
+
               <TableCell align="center" sx={{ bgcolor: '#f5f5f5' }}>Price Change (PD %)</TableCell>
               <TableCell align="right" sx={{ bgcolor: '#f5f5f5' }}>TDTS Score</TableCell>
             </TableRow>
@@ -109,6 +121,21 @@ export default function DividendAnalysis({ data, isLoading }: DividendAnalysisPr
                     <FormattedNumberDisplay value={row.pEx} decimalScale={2} />
                   </TableCell>
 
+                  {/* temaPrice */}
+                  <TableCell align="right">
+                    <FormattedNumberDisplay value={row.temaPrice} decimalScale={2} />
+                  </TableCell>
+
+                  {/* retBfTema */}
+                  <TableCell align="right">
+                    <FormattedNumberDisplay value={row.retBfTema} decimalScale={2} />
+                  </TableCell>
+
+                    {/* retAfTema */}
+                  <TableCell align="right">
+                    <FormattedNumberDisplay value={row.retAfTema} decimalScale={2} />
+                  </TableCell>
+
                   {/* Price Action (PD %) - แสดงเป็น Chip เพื่อความสวยงาม */}
                   <TableCell align="center">
                     <Chip
@@ -128,11 +155,11 @@ export default function DividendAnalysis({ data, isLoading }: DividendAnalysisPr
                   <TableCell 
                     align="right" 
                     style={{ 
-                      color: getChangeColor(row.tDts),
+                      color: getChangeColor(row.tdtsScore),
                       fontWeight: 600,
                     }}
                   >
-                    <FormattedNumberDisplay value={row.tDts} decimalScale={2} />
+                    <FormattedNumberDisplay value={row.tdtsScore} decimalScale={2} />
                   </TableCell>
                 </TableRow>
               ))
