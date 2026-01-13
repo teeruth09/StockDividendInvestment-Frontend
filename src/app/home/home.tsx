@@ -1,331 +1,116 @@
 'use client'
 
-import * as React from 'react';
-import { alpha } from '@mui/material/styles';
+import React, { useState, useCallback, useEffect } from "react";
 import Box from '@mui/material/Box';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
 import TablePagination from '@mui/material/TablePagination';
 import TableRow from '@mui/material/TableRow';
-import TableSortLabel from '@mui/material/TableSortLabel';
-import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
 import Paper from '@mui/material/Paper';
-import Checkbox from '@mui/material/Checkbox';
-import IconButton from '@mui/material/IconButton';
-import Tooltip from '@mui/material/Tooltip';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Switch from '@mui/material/Switch';
-import DeleteIcon from '@mui/icons-material/Delete';
-import FilterListIcon from '@mui/icons-material/FilterList';
-import { visuallyHidden } from '@mui/utils';
-import { Avatar, Chip, Button } from '@mui/material';
+import { Avatar, Chip, CircularProgress, Stack } from '@mui/material';
 import { TrendingUp } from '@mui/icons-material';
-
-interface StockData {
-  id: number;
-  symbol: string;
-  sector: string;
-  price: number;
-  change: number;
-  volume: number;
-  exDate: string;
-  dividend: number;
-}
-
-function createStockData(
-  id: number,
-  symbol: string,
-  sector: string,
-  price: number,
-  change: number,
-  volume: number,
-  exDate: string,
-  dividend: number,
-): StockData {
-  return {
-    id,
-    symbol,
-    sector,
-    price,
-    change,
-    volume,
-    exDate,
-    dividend,
-  };
-}
-
-const rows = [
-  createStockData(1, 'PTT', 'ENERG', 28.25, 4.2, 2, '6 ม.ค. 2568', 1.30),
-  createStockData(2, 'SCB', 'BANK', 124.00, 8.52, 2, '16 เม.ย. 2568', 8.40),
-  createStockData(3, 'CPALL', 'COMM', 50.50, 2.67, 1, '6 พ.ค. 2568', 1.35),
-  createStockData(4, 'AOT', 'TRANS', 38.75, 2.04, 1, '4 ธ.ค. 2568', 0.79),
-  createStockData(5, 'CPN', 'PROP', 51.25, 4.10, 1, '17 มี.ค. 2568', 2.10),
-  createStockData(6, 'KTB', 'BANK', 22.50, 6.87, 1, '16 เม.ย. 2568', 1.545),
-];
-
-function descendingComparator<T>(a: T, b: T, orderBy: keyof T) {
-  if (b[orderBy] < a[orderBy]) {
-    return -1;
-  }
-  if (b[orderBy] > a[orderBy]) {
-    return 1;
-  }
-  return 0;
-}
-
-type Order = 'asc' | 'desc';
-
-function getComparator<Key extends PropertyKey>(
-  order: Order,
-  orderBy: Key,
-): (
-  a: { [key in Key]: number | string },
-  b: { [key in Key]: number | string },
-) => number {
-  return order === 'desc'
-    ? (a, b) => descendingComparator(a, b, orderBy)
-    : (a, b) => -descendingComparator(a, b, orderBy);
-}
+import { getRecommendedStockApi } from '@/lib/api/recommendation';
+import { EnhancedTableHead } from "@/components/home/HeadTable";
+import StockFilterToolbar from "@/components/StockFilterToolbar";
+import { StockSector } from "@/types/enum";
+import FormattedNumberDisplay from "@/components/FormattedNumberDisplay";
+import { CLUSTER_STYLES, getCompareColor } from "@/lib/helpers/colorHelper";
+import Link from "next/link";
 
 interface HeadCell {
-  disablePadding: boolean;
-  id: keyof StockData;
+  id: string;
   label: string;
   numeric: boolean;
+  width?: string;
+  align?: 'left' | 'right' | 'center';
 }
 
-const headCells: readonly HeadCell[] = [
-  {
-    id: 'symbol',
-    numeric: false,
-    disablePadding: true,
-    label: 'สัญลักษณ์',
-  },
-  {
-    id: 'sector',
-    numeric: false,
-    disablePadding: false,
-    label: 'กลุ่ม',
-  },
-  {
-    id: 'price',
-    numeric: true,
-    disablePadding: false,
-    label: 'ราคาปิดวันปัจจุบัน(บาท)',
-  },
-  {
-    id: 'change',
-    numeric: true,
-    disablePadding: false,
-    label: 'ผลตอบแทนเงินปันผล(%)',
-  },
-  {
-    id: 'volume',
-    numeric: true,
-    disablePadding: false,
-    label: 'ปันผล(ครั้ง/ปี)',
-  },
-  {
-    id: 'exDate',
-    numeric: false,
-    disablePadding: false,
-    label: 'วันที่มีสิทธิรับ XD',
-  },
-  {
-    id: 'dividend',
-    numeric: true,
-    disablePadding: false,
-    label: 'เงินปันผล(บาท/หุ้น)',
-  },
+export const headCells: HeadCell[] = [
+  { id: 'symbol', numeric: false, label: 'สัญลักษณ์', width: '120px', align: 'left' },
+  { id: 'stockSector', numeric: false, label: 'กลุ่ม', width: '100px', align: 'left' },
+  { id: 'clusterName', numeric: false, label: 'Cluster', width: '180px', align: 'left' },
+  { id: 'latestPrice', numeric: true, label: 'ราคา', width: '90px', align: 'right' },
+  { id: 'totalScore', numeric: true, label: 'Score', width: '90px', align: 'right' },
+  { id: 'dyPercent', numeric: true, label: 'Yield(%)', width: '100px', align: 'right' },
+  { id: 'dividendExDate', numeric: false, label: 'วันที่ XD', width: '120px', align: 'right' }, // วันที่สากลนิยมชิดขวาเพื่อให้ตรงกับตัวเลขปันผล
+  { id: 'dividendDps', numeric: true, label: 'ปันผล(บาท)', width: '100px', align: 'right' },
+  { id: 'predictExDate', numeric: false, label: 'คาดการณ์ XD', width: '120px', align: 'right' },
+  { id: 'predictDps', numeric: true, label: 'คาดการณ์ปันผล', width: '110px', align: 'right' },
+  { id: 'retBfTema', numeric: true, label: 'Ret Before(%)', width: '110px', align: 'right' },
+  { id: 'retAfTema', numeric: true, label: 'Ret After(%)', width: '110px', align: 'right' },
 ];
 
-interface EnhancedTableProps {
-  numSelected: number;
-  onRequestSort: (event: React.MouseEvent<unknown>, property: keyof StockData) => void;
-  onSelectAllClick: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  order: Order;
-  orderBy: string;
-  rowCount: number;
-}
-
-function EnhancedTableHead(props: EnhancedTableProps) {
-  const { onSelectAllClick, order, orderBy, numSelected, rowCount, onRequestSort } =
-    props;
-  const createSortHandler =
-    (property: keyof StockData) => (event: React.MouseEvent<unknown>) => {
-      onRequestSort(event, property);
-    };
-
-  return (
-    <TableHead>
-      <TableRow>
-        <TableCell padding="checkbox">
-          <Checkbox
-            color="primary"
-            indeterminate={numSelected > 0 && numSelected < rowCount}
-            checked={rowCount > 0 && numSelected === rowCount}
-            onChange={onSelectAllClick}
-            inputProps={{
-              'aria-label': 'select all stocks',
-            }}
-          />
-        </TableCell>
-        {headCells.map((headCell) => (
-          <TableCell
-            key={headCell.id}
-            align={headCell.numeric ? 'right' : 'left'}
-            padding={headCell.disablePadding ? 'none' : 'normal'}
-            sortDirection={orderBy === headCell.id ? order : false}
-            sx={{
-              fontWeight: 600,
-              color: '#374151',
-              backgroundColor: '#f8fafc',
-            }}
-          >
-            <TableSortLabel
-              active={orderBy === headCell.id}
-              direction={orderBy === headCell.id ? order : 'asc'}
-              onClick={createSortHandler(headCell.id)}
-            >
-              {headCell.label}
-              {orderBy === headCell.id ? (
-                <Box component="span" sx={visuallyHidden}>
-                  {order === 'desc' ? 'sorted descending' : 'sorted ascending'}
-                </Box>
-              ) : null}
-            </TableSortLabel>
-          </TableCell>
-        ))}
-        <TableCell
-          align="center"
-          sx={{
-            fontWeight: 600,
-            color: '#374151',
-            backgroundColor: '#f8fafc',
-          }}
-        >
-          การกำหนดเงิน
-        </TableCell>
-      </TableRow>
-    </TableHead>
-  );
-}
-
-interface EnhancedTableToolbarProps {
-  numSelected: number;
-}
-
-function EnhancedTableToolbar(props: EnhancedTableToolbarProps) {
-  const { numSelected } = props;
-
-  return (
-    <Toolbar
-      sx={[
-        {
-          pl: { sm: 2 },
-          pr: { xs: 1, sm: 1 },
-          minHeight: '64px',
-        },
-        numSelected > 0 && {
-          bgcolor: (theme) =>
-            alpha(theme.palette.primary.main, theme.palette.action.activatedOpacity),
-        },
-      ]}
-    >
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1 }}>
-        <Avatar
-          sx={{
-            backgroundColor: '#60a5fa',
-            width: 40,
-            height: 40,
-          }}
-        >
-          📊
-        </Avatar>
-        {numSelected > 0 ? (
-          <Typography
-            color="inherit"
-            variant="subtitle1"
-            component="div"
-          >
-            {numSelected} รายการที่เลือก
-          </Typography>
-        ) : (
-          <Typography
-            variant="h6"
-            id="tableTitle"
-            component="div"
-            sx={{ fontWeight: 'bold', color: 'text.primary' }}
-          >
-            หุ้นที่แนะนำสำหรับ
-          </Typography>
-        )}
-      </Box>
-      
-      {numSelected > 0 ? (
-        <Tooltip title="ลบ">
-          <IconButton>
-            <DeleteIcon />
-          </IconButton>
-        </Tooltip>
-      ) : (
-        <Tooltip title="กรองข้อมูล">
-          <IconButton>
-            <FilterListIcon />
-          </IconButton>
-        </Tooltip>
-      )}
-    </Toolbar>
-  );
-}
-
 export default function StockTable() {
-  const [order, setOrder] = React.useState<Order>('asc');
-  const [orderBy, setOrderBy] = React.useState<keyof StockData>('symbol');
-  const [selected, setSelected] = React.useState<readonly number[]>([]);
-  const [page, setPage] = React.useState(0);
-  const [dense, setDense] = React.useState(false);
-  const [rowsPerPage, setRowsPerPage] = React.useState(10);
+  const [data, setData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [dense, setDense] = useState(false); // ตัวแปรที่ทำให้เกิด Error ถ้าลืมประกาศ
+  const [order, setOrder] = useState<'asc' | 'desc'>('desc');
+  const [orderBy, setOrderBy] = useState<string>('totalScore');
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [totalItems, setTotalItems] = useState(0);
 
-  const handleRequestSort = (
-    event: React.MouseEvent<unknown>,
-    property: keyof StockData,
-  ) => {
+  const [search, setSearch] = useState<string>("");
+  const [sector, setSector] = useState<string>("");
+  const [cluster, setCluster] = useState<string>("");
+  const [minDy, setMinDy] = useState<number | "">("");
+  const [minScore, setMinScore] = useState<number | "">("");
+  const [month, setMonth] = useState<number | "">("");
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
+
+  const [filterOptions, setFilterOptions] = React.useState<{sectors: string[], clusters: string[]}>({
+    sectors: [],
+    clusters: []
+  });
+
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await getRecommendedStockApi({
+        page: page + 1, // MUI เริ่มที่ 0 แต่ API เริ่มที่ 1
+        limit: rowsPerPage,
+        sortBy: orderBy,
+        order: order,
+        search: search || undefined,
+        sector: sector || undefined,
+        cluster: cluster || undefined,
+        startDate: startDate || undefined,
+        endDate: endDate || undefined,
+
+        minDy: minDy !== "" ? Number(minDy) : undefined,
+        minScore: minScore !== "" ? Number(minScore) : undefined,
+        month: month !== "" ? Number(month) : undefined,
+      });
+      
+      if (response?.status === 'success') {
+        setData(response.data || []);
+        setTotalItems(response.meta?.totalItems || 0);
+        // เก็บค่า options เพื่อใช้ใน Dropdown
+        setFilterOptions(response.options);
+      }
+    } catch (error) {
+      console.error("Fetch Error:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [page, rowsPerPage, orderBy, order, search, sector, cluster, minDy, minScore, month, startDate, endDate]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  // Handlers สำหรับ Table Events
+  const handleRequestSort = (event: React.MouseEvent<unknown>, property: string) => {
     const isAsc = orderBy === property && order === 'asc';
     setOrder(isAsc ? 'desc' : 'asc');
     setOrderBy(property);
-  };
-
-  const handleSelectAllClick = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.checked) {
-      const newSelected = rows.map((n) => n.id);
-      setSelected(newSelected);
-      return;
-    }
-    setSelected([]);
-  };
-
-  const handleClick = (event: React.MouseEvent<unknown>, id: number) => {
-    const selectedIndex = selected.indexOf(id);
-    let newSelected: readonly number[] = [];
-
-    if (selectedIndex === -1) {
-      newSelected = newSelected.concat(selected, id);
-    } else if (selectedIndex === 0) {
-      newSelected = newSelected.concat(selected.slice(1));
-    } else if (selectedIndex === selected.length - 1) {
-      newSelected = newSelected.concat(selected.slice(0, -1));
-    } else if (selectedIndex > 0) {
-      newSelected = newSelected.concat(
-        selected.slice(0, selectedIndex),
-        selected.slice(selectedIndex + 1),
-      );
-    }
-    setSelected(newSelected);
+    setPage(0);
   };
 
   const handleChangePage = (event: unknown, newPage: number) => {
@@ -337,208 +122,335 @@ export default function StockTable() {
     setPage(0);
   };
 
-  const handleChangeDense = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setDense(event.target.checked);
+  const handleClear = () => {
+    setSearch("");
+    setSector("");
+    setCluster("");
+    setMinDy("");
+    setMinScore("");
+    setMonth("");
+    setStartDate("");
+    setEndDate("")
+    setPage(0);
   };
 
-  const emptyRows =
-    page > 0 ? Math.max(0, (1 + page) * rowsPerPage - rows.length) : 0;
-
-  const visibleRows = React.useMemo(
-    () =>
-      [...rows]
-        .sort(getComparator(order, orderBy))
-        .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage),
-    [order, orderBy, page, rowsPerPage],
-  );
 
   return (
     <Box sx={{ width: '100%' }}>
-      <Paper 
-        sx={{ 
-          width: '100%', 
-          mb: 2,
-          borderRadius: 2,
-          boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+      {/* Header Section */}
+      <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mb: 2 }}>
+        <Avatar 
+          src="/icon/graph.png"
+          variant="square" 
+          sx={{ width: 40, height: 40 }} 
+        />
+        <Box>
+          <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#334155' }}>
+            รายการหุ้นแนะนำ (Recommended Stocks)
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            วิเคราะห์ด้วยโมเดล ML เพื่อค้นหาโอกาสในการรับเงินปันผลที่ดีที่สุด
+          </Typography>
+        </Box>
+      </Stack>
+      <StockFilterToolbar
+        search={search}
+        setSearch={setSearch}
+        sector={sector}
+        setSector={setSector}
+        cluster={cluster}
+        setCluster={setCluster}
+        minDy={minDy}
+        setMinDy={setMinDy}
+        minScore={minScore}
+        setMinScore={setMinScore}
+        month={month}
+        setMonth={setMonth}
+        startDate={startDate}
+        setStartDate={setStartDate}
+        endDate={endDate}
+        setEndDate={setEndDate}
+        onSearch={() => {
+          setPage(0); // กลับหน้าแรกเมื่อค้นหาใหม่
+          fetchData();
         }}
-      >
-        <EnhancedTableToolbar numSelected={selected.length} />
-        <TableContainer>
-          <Table
-            sx={{ minWidth: 750 }}
-            aria-labelledby="tableTitle"
-            size={dense ? 'small' : 'medium'}
-          >
+        onClear={handleClear}
+      />
+      <Paper sx={{ width: '100%', mb: 2, borderRadius: 2, overflow: 'hidden' }}>
+        <TableContainer sx={{ position: 'relative', minHeight: 400 }}>
+          {/* แสดง Loading ทับตารางเวลาโหลด */}
+          {loading && (
+            <Box sx={{ 
+              position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, 
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              bgcolor: 'rgba(255,255,255,0.7)', zIndex: 3 
+            }}>
+              <CircularProgress />
+            </Box>
+          )}
+
+          <Table sx={{ minWidth: 750 }} size={dense ? 'small' : 'medium'}>
             <EnhancedTableHead
-              numSelected={selected.length}
               order={order}
               orderBy={orderBy}
-              onSelectAllClick={handleSelectAllClick}
               onRequestSort={handleRequestSort}
-              rowCount={rows.length}
+              rowCount={totalItems}
+              customHeadCells={headCells}
             />
             <TableBody>
-              {visibleRows.map((row, index) => {
-                const isItemSelected = selected.includes(row.id);
-                const labelId = `enhanced-table-checkbox-${index}`;
-
+              {data.map((row) => {                
                 return (
                   <TableRow
                     hover
-                    onClick={(event) => handleClick(event, row.id)}
-                    role="checkbox"
-                    aria-checked={isItemSelected}
-                    tabIndex={-1}
-                    key={row.id}
-                    selected={isItemSelected}
+                    key={row.symbol}
                     sx={{ 
-                      cursor: 'pointer',
-                      '&:hover': {
-                        backgroundColor: '#f8fafc',
-                      },
+                      '&:last-child td, &:last-child th': { border: 0 },
+                      height: 64,
                     }}
                   >
-                    <TableCell padding="checkbox">
-                      <Checkbox
-                        color="primary"
-                        checked={isItemSelected}
-                        inputProps={{
-                          'aria-labelledby': labelId,
-                        }}
+
+                    {/* 1. Symbol พร้อม Avatar ดีไซน์สะอาดตา */}
+                    <TableCell 
+                      component="th" 
+                      scope="row" 
+                      padding="none"
+                      sx={{ 
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                      }}    
+                    >
+                      <Link 
+                        href={`/stock/${row.symbol}`} 
+                        style={{ textDecoration: 'none' }}
+                      >
+                        <Stack direction="row" spacing={1.5} alignItems="center" sx={{ ml: 1 }}>
+                          <Avatar 
+                            sx={{ 
+                              width: 32, 
+                              height: 32, 
+                              bgcolor: '#052d6e',
+                              fontSize: '0.875rem',
+                              fontWeight: 'bold',
+                              boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                            }}
+                          >
+                            {row.symbol[0]}
+                          </Avatar>
+                          <Typography variant="body2" sx={{ fontWeight: 700, color: '#1e293b' }}>
+                              {row.symbol}
+                          </Typography>
+                        </Stack>
+                      </Link>
+                    </TableCell>
+
+                    {/* 2. กลุ่มธุรกิจ */}
+                    <TableCell>
+                      <Chip 
+                        label={StockSector[row.stockSector as keyof typeof StockSector] || row.stockSector}
+                        size="small" 
+                        sx={{ 
+                          borderRadius: '16px', 
+                          bgcolor: '#e2e8f0', 
+                          color: '#475569',
+                          fontWeight: 400,
+                          fontSize: 'body2',
+                          border: 'none'
+                        }} 
                       />
                     </TableCell>
-                    
-                    {/* Symbol */}
-                    <TableCell
-                      component="th"
-                      id={labelId}
-                      scope="row"
-                      padding="none"
-                    >
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Avatar
+
+
+                    {/* 3. กลุ่ม Cluster */}
+                    <TableCell sx={{ width: '180px' }}>
+                      {(() => {
+                        const style = CLUSTER_STYLES[row.clusterName] || {
+                          bg: '#f1f5f9', 
+                          color: '#475569',
+                          label: row.clusterName
+                        };
+                        return (
+                          <Chip 
+                            label={style.label}
+                            size="small" 
+                            sx={{ 
+                              borderRadius: '6px',
+                              bgcolor: style.bg, 
+                              color: style.color,
+                              fontWeight: 400,
+                              fontSize: '0.75rem',
+                              border: 'none',
+                              whiteSpace: 'nowrap',
+                            }} 
+                          />
+                        );
+                      })()}
+                    </TableCell>
+
+                    {/* 4. ราคาล่าสุด  */}
+                    <TableCell align="right">
+                      <Typography variant="body2" sx={{ fontWeight: 600, color: '#334155' }}>
+                        <FormattedNumberDisplay
+                          value={row.latestPrice ?? '-'} 
+                          decimalScale={2} 
+                        />
+                      </Typography>
+                    </TableCell>
+
+                    {/* 5. คะแนนแนะนำ */}
+                    <TableCell align="right">
+                      <Stack direction="row" justifyContent="flex-end" alignItems="center" spacing={0.5}>
+                        <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#2563eb' }} />
+                        <Typography variant="body2" sx={{ fontWeight: 700, color: '#1e293b' }}>
+                          <FormattedNumberDisplay
+                            value={row.totalScore ?? '-'} 
+                            decimalScale={2} 
+                          />
+                        </Typography>
+                      </Stack>
+                    </TableCell>
+
+                    {/* 6. Yield (%) พร้อมไอคอน Trending */}
+                    <TableCell align="right">
+                      <Stack direction="row" spacing={0.5} alignItems="center" justifyContent="flex-end">
+                        {row.dyPercent > 0 && (
+                          <TrendingUp sx={{ fontSize: 16, color: '#4caf50' }} />
+                        )}
+                        <Typography 
+                          variant="body2" 
                           sx={{ 
-                            width: 24, 
-                            height: 24, 
-                            backgroundColor: '#60a5fa',
-                            fontSize: '0.75rem'
+                            color: row.dyPercent > 0 ? '#4caf50' : '#f44336', 
+                            fontWeight: 600, 
                           }}
                         >
-                          {row.symbol.charAt(0)}
-                        </Avatar>
-                        <Typography variant="body2" fontWeight="bold">
-                          {row.symbol}
+                          <FormattedNumberDisplay
+                            value={row.dyPercent > 0 ? `${row.dyPercent.toFixed(2)}%` : '%'} 
+                            decimalScale={2} 
+                          />
                         </Typography>
-                      </Box>
+                      </Stack>
                     </TableCell>
-                    
-                    {/* Sector */}
-                    <TableCell>
-                      <Chip
-                        label={row.sector}
-                        size="small"
-                        sx={{
-                          backgroundColor: '#f1f5f9',
-                          color: '#475569',
-                          fontSize: '0.75rem',
-                        }}
-                      />
-                    </TableCell>
-                    
-                    {/* Price */}
-                    <TableCell align="right">
-                      <Typography variant="body2" fontWeight="medium">
-                        {row.price.toFixed(2)}
+
+                    {/* 7. วันที่ XD */}
+                    <TableCell 
+                      align="right"
+                      component="th" 
+                      scope="row" 
+                      padding="none"
+                      sx={{ 
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                      }}                     
+                    >
+                      <Typography variant="body2" sx={{ fontWeight: 400, color: '#64748b' }}>
+                        {row.dividendExDate
+                        ? new Date(row.dividendExDate).toLocaleDateString("th-TH", {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                          })
+                        : "-"}
                       </Typography>
                     </TableCell>
-                    
-                    {/* Change */}
+
+                    {/* 8. เงินปันผล */}
                     <TableCell align="right">
-                      <Box
-                        sx={{
-                          color: row.change > 0 ? '#16a34a' : '#dc2626',
-                          fontWeight: 'medium',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'flex-end',
-                          gap: 0.5,
-                        }}
+                      <Typography variant="body2" sx={{ fontWeight: 600, color: '#1e293b' }}>
+                        <FormattedNumberDisplay
+                          value={row.dividendDps ?? '-'} 
+                          decimalScale={2} 
+                        />
+                      </Typography>
+                    </TableCell>
+
+                    {/* 9. คาดการณ์ XD */}
+                    <TableCell 
+                      align="right"
+                      component="th" 
+                      scope="row" 
+                      padding="none"
+                      sx={{ 
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                      }}                   
+                    >
+                      <Typography variant="body2" sx={{ fontWeight: 400, color: '#64748b' }}>
+                        {row.predictExDate
+                        ? new Date(row.predictExDate).toLocaleDateString("th-TH", {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                          })
+                        : "-"}
+                      </Typography>
+                    </TableCell>
+
+                    {/* 10. คาดการณ์เงินปันผล */}
+                    <TableCell align="right">
+                      <Typography variant="body2" sx={{ fontWeight: 400, color: '#1e293b' }}>
+                        <FormattedNumberDisplay
+                          value={row.predictDps ?? '-'} 
+                          decimalScale={2} 
+                        />
+                      </Typography>
+                    </TableCell>
+
+                    {/* 11. Ret Before (%) */}
+                    <TableCell 
+                      align="right"     
+                    >
+                      <Typography 
+                        variant="body2" 
+                        style={{ 
+                          color: getCompareColor(row.retBfTema,row.retAfTema),
+                          fontWeight: 400,
+                        }}  
                       >
-                        {row.change > 0 && <TrendingUp sx={{ fontSize: 16 }} />}
-                        {row.change.toFixed(2)}%
-                      </Box>
-                    </TableCell>
-                    
-                    {/* Volume */}
-                    <TableCell align="right">{row.volume}</TableCell>
-                    
-                    {/* Ex Date */}
-                    <TableCell>
-                      <Typography variant="body2" color="text.secondary">
-                        {row.exDate}
+                        <FormattedNumberDisplay
+                          value={row.retBfTema ?? '-'} 
+                          decimalScale={2} 
+                        />
                       </Typography>
                     </TableCell>
-                    
-                    {/* Dividend */}
+
+                     {/* 12. Ret After (%) */}
                     <TableCell align="right">
-                      <Typography variant="body2" fontWeight="medium" color="primary">
-                        ฿{row.dividend.toFixed(2)}
-                      </Typography>
-                    </TableCell>
-                    
-                    {/* Actions */}
-                    <TableCell align="center">
-                      <Button
-                        size="small"
-                        variant="contained"
-                        sx={{
-                          backgroundColor: '#60a5fa',
-                          fontSize: '0.75rem',
-                          py: 0.5,
-                          px: 1,
-                          '&:hover': {
-                            backgroundColor: '#3b82f6',
-                          },
-                        }}
-                        onClick={(e) => {
-                          e.stopPropagation(); // ป้องกันไม่ให้ trigger row selection
-                          console.log('Buy/Sell clicked for', row.symbol);
-                        }}
+                      <Typography
+                        variant="body2" 
+                        style={{ 
+                          color: getCompareColor(row.retAfTema,row.retBfTema),
+                          fontWeight: 400,
+                        }}  
                       >
-                        ซื้อ/ขาย
-                      </Button>
+                        <FormattedNumberDisplay
+                          value={row.retAfTema ?? '-'} 
+                          decimalScale={2} 
+                        />
+                      </Typography>
                     </TableCell>
                   </TableRow>
                 );
               })}
-              {emptyRows > 0 && (
-                <TableRow
-                  style={{
-                    height: (dense ? 33 : 53) * emptyRows,
-                  }}
-                >
-                  <TableCell colSpan={8} />
-                </TableRow>
-              )}
             </TableBody>
           </Table>
         </TableContainer>
+
         <TablePagination
           rowsPerPageOptions={[5, 10, 25]}
           component="div"
-          count={rows.length}
+          count={totalItems}
           rowsPerPage={rowsPerPage}
           page={page}
           onPageChange={handleChangePage}
           onRowsPerPageChange={handleChangeRowsPerPage}
-          labelRowsPerPage="แถวต่อหน้า:"
-          labelDisplayedRows={({ from, to, count }) =>
-            `${from}–${to} จาก ${count !== -1 ? count : `มากกว่า ${to}`}`
-          }
+          labelRowsPerPage="แถวต่อหน้า"
         />
       </Paper>
+      
       <FormControlLabel
-        control={<Switch checked={dense} onChange={handleChangeDense} />}
+        control={<Switch checked={dense} onChange={(e) => setDense(e.target.checked)} />}
         label="แสดงแบบกระชับ"
       />
     </Box>

@@ -44,3 +44,11 @@ export enum TransactionType {
   BUY = 'BUY',
   SELL = 'SELL',
 }
+
+export enum ClusterType {
+  DIVIDEND_TRAP = 'Dividend Trap (Avoid)',
+  GOLDEN_GOOSE = 'Golden Goose (Strong Trend)',
+  NEUTRAL = 'Sell on Fact (Neutral)',
+  REBOUND_STAR = 'Rebound Star (Buy on Dip)',
+  UNKNOWN = 'UNKNOWN',
+}

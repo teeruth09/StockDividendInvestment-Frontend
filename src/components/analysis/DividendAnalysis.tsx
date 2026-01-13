@@ -14,6 +14,7 @@ import {
   Divider,
 } from "@mui/material";
 import FormattedNumberDisplay from "../FormattedNumberDisplay";
+import { getChangeColor, getCompareColor } from "@/lib/helpers/colorHelper";
 
 // แปลง Interface ให้เป็นตามรูปแบบข้อมูลที่ได้จาก API (และรองรับการ Map)
 interface DividendAnalysisData{
@@ -53,11 +54,6 @@ export default function DividendAnalysis({ data, isLoading }: DividendAnalysisPr
     retBfTema: item.retBfTema,
     retAfTema: item.retAfTema,
   }));
-
-  const getChangeColor = (value: number | null | undefined) => {
-    if (value === undefined || value === null) return 'inherit';
-    return value >= 0 ? '#4caf50' : '#f44336';
-  };
 
   return (
     <Box>
@@ -127,12 +123,24 @@ export default function DividendAnalysis({ data, isLoading }: DividendAnalysisPr
                   </TableCell>
 
                   {/* retBfTema */}
-                  <TableCell align="right">
+                  <TableCell 
+                    align="right"
+                    style={{ 
+                      color: getCompareColor(row.retBfTema,row.retAfTema),
+                      fontWeight: 500,
+                    }}               
+                  >
                     <FormattedNumberDisplay value={row.retBfTema} decimalScale={2} />
                   </TableCell>
 
                     {/* retAfTema */}
-                  <TableCell align="right">
+                  <TableCell 
+                    align="right"
+                    style={{ 
+                      color: getCompareColor(row.retAfTema,row.retBfTema),
+                      fontWeight: 500,
+                    }}    
+                  >
                     <FormattedNumberDisplay value={row.retAfTema} decimalScale={2} />
                   </TableCell>
 
