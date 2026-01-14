@@ -19,6 +19,7 @@ import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { HistoricalPrice } from "@/types/stock";
 import { getHistoricalPricesApi } from "@/lib/api/stock"; 
 import  FormattedNumberDisplay from '../FormattedNumberDisplay';
+import { getChangeColor } from "@/lib/helpers/colorHelper";
 
 const getDaysAgo = (days: number) => {
     const date = new Date();
@@ -67,12 +68,6 @@ export default function PriceHistoryTable({ stockSymbol }: PriceHistoryTableProp
     const handleSearch = () => {
         fetchData(); 
     };
-    
-    const getChangeColor = (value: number | null | undefined) => {
-        if (value === undefined || value === null) return 'inherit';
-        return value >= 0 ? '#4caf50' : '#f44336';
-    };
-
 
     return (
         <Box>
@@ -193,9 +188,6 @@ export default function PriceHistoryTable({ stockSymbol }: PriceHistoryTableProp
                                             fontWeight: 600,
                                         }}
                                     >
-                                        {/* {price.priceChange !== null && price.priceChange !== undefined ? 
-                                            `${price.priceChange >= 0 ? "+" : ""}${price.priceChange.toFixed(2)}` : '-'} */}
-
                                         <FormattedNumberDisplay 
                                             value={price.priceChange} 
                                             decimalScale={2}

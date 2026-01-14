@@ -10,7 +10,12 @@ export function getCompareColor(current: number | null | undefined, target: numb
 //Check color >= 0
 export function getChangeColor(value: number | null | undefined) {
     if (value === undefined || value === null) return 'inherit';
-    return value >= 0 ? '#4caf50' : '#f44336';
+
+    if (value > 0) return '#4caf50';
+
+    if (value < 0) return '#f44336';
+
+    return 'inherit';
 };
 
 

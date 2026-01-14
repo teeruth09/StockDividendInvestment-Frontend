@@ -16,11 +16,12 @@ import { Avatar, Chip, CircularProgress, Stack } from '@mui/material';
 import { TrendingUp } from '@mui/icons-material';
 import { getRecommendedStockApi } from '@/lib/api/recommendation';
 import { EnhancedTableHead } from "@/components/home/HeadTable";
-import StockFilterToolbar from "@/components/StockFilterToolbar";
+import StockFilterToolbar from "@/components/home/StockFilterToolbar";
 import { StockSector } from "@/types/enum";
 import FormattedNumberDisplay from "@/components/FormattedNumberDisplay";
 import { CLUSTER_STYLES, getCompareColor } from "@/lib/helpers/colorHelper";
 import Link from "next/link";
+import { StockRecommendation } from "@/types/recommendation";
 
 interface HeadCell {
   id: string;
@@ -46,7 +47,7 @@ export const headCells: HeadCell[] = [
 ];
 
 export default function StockTable() {
-  const [data, setData] = useState<any[]>([]);
+  const [data, setData] = useState<StockRecommendation[]>([]);
   const [loading, setLoading] = useState(false);
   const [dense, setDense] = useState(false); // ตัวแปรที่ทำให้เกิด Error ถ้าลืมประกาศ
   const [order, setOrder] = useState<'asc' | 'desc'>('desc');

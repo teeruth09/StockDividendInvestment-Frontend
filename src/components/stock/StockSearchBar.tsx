@@ -9,19 +9,13 @@ import {
   RotateLeft as ResetIcon,
   ExpandMore as ExpandMoreIcon
 } from '@mui/icons-material';
-import { ClusterType, StockSector } from '@/types/enum';
+import { StockSector } from '@/types/enum';
 
-interface StockFilterToolbarProps {
+interface StockSearchToolbarProps {
   search: string;
   setSearch: (value: string) => void;
   sector: string;
   setSector: (value: string) => void;
-  cluster: string;
-  setCluster: (value: string) => void;
-  minDy: number | "";
-  setMinDy: (value: number | "") => void;
-  minScore: number | "";
-  setMinScore: (value: number | "") => void;
   month: number | "";
   setMonth: (value: number | "") => void;
   startDate: string;
@@ -32,12 +26,12 @@ interface StockFilterToolbarProps {
   onClear: () => void;
 }
 
-export default function StockFilterToolbar({
-  search, setSearch, sector, setSector, cluster, setCluster, 
-  minDy, setMinDy, minScore, setMinScore, month, setMonth,
+export default function StockSearchToolbar({
+  search, setSearch, sector, setSector,
+  month, setMonth,
   startDate, setStartDate, endDate, setEndDate,
   onSearch, onClear
-}: StockFilterToolbarProps) {
+}: StockSearchToolbarProps) {
   const [expanded, setExpanded] = useState(true);
 
   return (
@@ -96,69 +90,27 @@ export default function StockFilterToolbar({
               </FormControl>
             </Grid>
 
-            {/* ดรอปดาวน์ Cluster */}
-            <Grid size={{ xs:12, sm:4 }}>
-              <FormControl fullWidth size="small">
-                <InputLabel>กลุ่ม Cluster</InputLabel>
-                <Select
-                  value={cluster}
-                  label="สถานะ/กลุ่ม Cluster"
-                  onChange={(e) => setCluster(e.target.value as string)}
-                >
-                  <MenuItem value=""><em>ทั้งหมด</em></MenuItem>
-                  {Object.entries(ClusterType).map(([key, label]) => (
-                    <MenuItem key={key} value={key}>
-                    {label}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-
-            {/* Yield ขั้นต่ำ */}
-            <Grid size={{ xs: 12, sm: 4 }}>
-              <TextField
-                fullWidth
-                label="Yield ขั้นต่ำ (%)"
-                type="number"
-                size="small"
-                value={minDy}
-                onChange={(e) => setMinDy(e.target.value === "" ? "" : Number(e.target.value))}
-                slotProps={{ htmlInput: { min: 0, step: "0.1" } }}
-              />
-            </Grid>
-
-            {/* Score ขั้นต่ำ */}
-            <Grid size={{ xs: 12, sm: 4 }}>
-              <TextField
-                fullWidth
-                label="Score ขั้นต่ำ"
-                type="number"
-                size="small"
-                value={minScore}
-                onChange={(e) => setMinScore(e.target.value === "" ? "" : Number(e.target.value))}
-                slotProps={{ htmlInput: { min: 0 } }}
-              />
-            </Grid>
-
             {/* เลือกเดือน */}
             <Grid size={{ xs: 12, sm: 4 }}>
-              <FormControl fullWidth size="small">
-                <InputLabel>เดือนที่จ่ายปันผล</InputLabel>
-                <Select
-                  value={month}
-                  label="เดือนที่จ่ายปันผล"
-                  onChange={(e) => setMonth(e.target.value === "" ? "" : Number(e.target.value))}
-                >
-                  <MenuItem value=""><em>ทั้งหมด</em></MenuItem>
-                  {[
-                    "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
-                    "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"
-                  ].map((name, index) => (
-                  <MenuItem key={index + 1} value={index + 1}>{name}</MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+                <FormControl fullWidth size="small">
+                    <InputLabel>เดือนที่จ่ายปันผล</InputLabel>
+                    <Select
+                        value={month}
+                        label="เดือนที่จ่ายปันผล"
+                        onChange={(e) => {
+                        const val = e.target.value;
+                        setMonth(val === 0 ? "" : Number(val));
+                        }}
+                    >
+                        <MenuItem value={0}><em>ทั้งหมด</em></MenuItem>
+                        {[
+                        "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
+                        "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"
+                        ].map((name, index) => (
+                        <MenuItem key={index + 1} value={index + 1}>{name}</MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
             </Grid>
 
             {/* ช่วงวันที่ (Date Range) */}
