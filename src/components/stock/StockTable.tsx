@@ -14,7 +14,7 @@ import { EnhancedTableHead } from "@/components/home/HeadTable";
 import { StockSector } from "@/types/enum";
 import FormattedNumberDisplay from "@/components/FormattedNumberDisplay";
 import Link from "next/link";
-import { Stock } from "@/types/stock";
+import { Stock, StockListResponse } from "@/types/stock";
 import { getStockListApi } from "@/lib/api/stock";
 import StockSearchToolbar from "./StockSearchBar";
 import { getChangeColor } from "@/lib/helpers/colorHelper";
@@ -31,7 +31,7 @@ export const headCells: HeadCell[] = [
   { id: 'stockSymbol', numeric: false, label: 'สัญลักษณ์', width: '120px', align: 'left' },
   { id: 'stockSector', numeric: false, label: 'กลุ่ม', width: '100px', align: 'left' },
   { id: 'latestOpenPrice', numeric: true, label: 'ราคาเปิดล่าสุด', width: '90px', align: 'right' },
-  { id: 'latest็HighPrice', numeric: true, label: 'ราคาสูงสุดล่าสุด', width: '90px', align: 'right' },
+  { id: 'latestHighPrice', numeric: true, label: 'ราคาสูงสุดล่าสุด', width: '90px', align: 'right' },
   { id: 'latestLowPrice', numeric: true, label: 'ราคาต่ำสุดล่าสุด', width: '90px', align: 'right' },
   { id: 'latestClosePrice', numeric: true, label: 'ราคาเปิดล่าสุด', width: '90px', align: 'right' },
   { id: 'latestPriceChange', numeric: true, label: 'เปลี่ยนแปลง', width: '90px', align: 'right' },
@@ -42,12 +42,12 @@ export const headCells: HeadCell[] = [
 ];
 
 export default function StockTable() {
-  const [stocksData, setStocksData] = useState<Stock[]>([]);  
+  const [stocksData, setStocksData] = useState<StockListResponse[]>([]);  
   const [loading, setLoading] = useState(false);
 
   const [dense, setDense] = useState(false);
   const [order, setOrder] = useState<'asc' | 'desc'>('asc');
-  const [orderBy, setOrderBy] = useState<string>('stockSymbol');
+  const [orderBy, setOrderBy] = useState<string>('stock_symbol');
 
   const [search, setSearch] = useState<string>("");
   const [sector, setSector] = useState<string>("");
@@ -60,8 +60,15 @@ export default function StockTable() {
     setLoading(true);
     try {
       const response = await getStockListApi({
-          search: search || undefined,
-          sector: sector || undefined,
+        sortBy: orderBy,
+        order: order,
+        search: search || undefined,
+        sector: sector || undefined,
+
+        startDate: startDate || undefined,
+        endDate: endDate || undefined,
+        month: month !== "" ? Number(month) : undefined,
+
       });      
       setStocksData(response);
     } catch (error) {
@@ -69,22 +76,27 @@ export default function StockTable() {
     } finally {
       setLoading(false);
     }
-  }, [search, sector]);
+  }, [orderBy, order, search, sector, month, startDate, endDate]);
 
   useEffect(() => {
     fetchData();
-  }, [fetchData]);
+  }, [orderBy, order]);
 
   // ฟังก์ชันจัดการการเรียงลำดับข้อมูลในหน้าเดียว (Client-side Sorting)
   const sortedRows = useMemo(() => {
       return [...stocksData].sort((a, b) => {
-          const aValue = a[orderBy as keyof Stock] ?? 0;
-          const bValue = b[orderBy as keyof Stock] ?? 0;
+          const aValue = a[orderBy as keyof StockListResponse] ?? 0;
+          const bValue = b[orderBy as keyof StockListResponse] ?? 0;
+
+          const parseValue = (v: unknown) => (v === null || v === undefined ? -Infinity : typeof v === 'string' ? parseFloat(v) : v);
+
+          const valA = parseValue(aValue);
+          const valB = parseValue(bValue);
 
           if (order === 'asc') {
-              return aValue > bValue ? 1 : -1;
+              return valA > valB ? 1 : -1;
           } else {
-              return aValue < bValue ? 1 : -1;
+              return valA < valB ? 1 : -1;
           }
       });
   }, [stocksData, order, orderBy]);
@@ -96,12 +108,31 @@ export default function StockTable() {
       setOrderBy(property);
   };
 
-  const handleClear = () => {
+  const handleClear = async () => {
       setSearch("");
       setSector("");
       setMonth("");
       setStartDate("");
-      setEndDate("")
+      setEndDate("");
+
+      setLoading(true);
+      try {
+        const response = await getStockListApi({
+          sortBy: orderBy,
+          order: order,
+          // ส่ง undefined เพื่อล้างฟิลเตอร์ที่ Server
+          search: undefined,
+          sector: undefined,
+          month: undefined,
+          startDate: undefined,
+          endDate: undefined
+        });      
+        setStocksData(response);
+      } catch (error) {
+        console.error("Clear & Fetch Error:", error);
+      } finally {
+        setLoading(false);
+      }
   };
 
 
@@ -206,7 +237,7 @@ export default function StockTable() {
                           {/* 2. กลุ่มธุรกิจ */}
                           <TableCell>
                           <Chip 
-                              label={StockSector[row.sector as unknown as keyof typeof StockSector] || row.sector}
+                              label={StockSector[row.stockSector as unknown as keyof typeof StockSector] || row.stockSector}
                               size="small" 
                               sx={{ 
                               borderRadius: '16px', 
@@ -223,7 +254,7 @@ export default function StockTable() {
                           <TableCell align="right">
                             <Typography variant="body2" sx={{ fontWeight: 600, color: '#334155' }}>
                               <FormattedNumberDisplay
-                                value={row.historicalPrices?.[0]?.openPrice ?? '-'} 
+                                value={row.latestOpenPrice ?? '-'} 
                                 decimalScale={2} 
                               />
                             </Typography>
@@ -232,7 +263,7 @@ export default function StockTable() {
                           <TableCell align="right">
                             <Typography variant="body2" sx={{ fontWeight: 600, color: '#334155' }}>
                               <FormattedNumberDisplay
-                                value={row.historicalPrices?.[0]?.highPrice ?? '-'} 
+                                value={row.latestHighPrice ?? '-'} 
                                 decimalScale={2} 
                               />
                             </Typography>
@@ -241,7 +272,7 @@ export default function StockTable() {
                           <TableCell align="right">
                             <Typography variant="body2" sx={{ fontWeight: 600, color: '#334155' }}>
                               <FormattedNumberDisplay
-                                value={row.historicalPrices?.[0]?.lowPrice ?? '-'} 
+                                value={row.latestLowPrice ?? '-'} 
                                 decimalScale={2} 
                               />
                             </Typography>
@@ -250,7 +281,7 @@ export default function StockTable() {
                           <TableCell align="right">
                             <Typography variant="body2" sx={{ fontWeight: 600, color: '#334155' }}>
                               <FormattedNumberDisplay
-                                  value={row.historicalPrices?.[0]?.closePrice ?? '-'} 
+                                  value={row.latestClosePrice ?? '-'} 
                                   decimalScale={2} 
                               />
                             </Typography>
@@ -258,9 +289,9 @@ export default function StockTable() {
 
                           {/* 7-8. การเปลี่ยนแปลง (Change & %Change) */}
                           <TableCell align="right">
-                            <Typography variant="body2" sx={{ fontWeight: 600, color: getChangeColor(row.historicalPrices?.[0]?.priceChange) }}>
+                            <Typography variant="body2" sx={{ fontWeight: 600, color: getChangeColor(row.latestPriceChange) }}>
                               <FormattedNumberDisplay
-                                value={row.historicalPrices?.[0]?.priceChange ?? '-'} 
+                                value={row.latestPriceChange ?? '-'} 
                                 decimalScale={2} 
                                 signDisplay="always"
                               />
@@ -268,9 +299,9 @@ export default function StockTable() {
                           </TableCell>
 
                           <TableCell align="right">
-                            <Typography variant="body2" sx={{ fontWeight: 600, color:getChangeColor(row.historicalPrices?.[0]?.percentChange) }}>
+                            <Typography variant="body2" sx={{ fontWeight: 600, color:getChangeColor(row.latestPercentChange) }}>
                               <FormattedNumberDisplay
-                                value={row.historicalPrices?.[0]?.percentChange ?? '-'} 
+                                value={row.latestPercentChange ?? '-'} 
                                 decimalScale={2} 
                                 signDisplay="always"
                               />
@@ -311,8 +342,8 @@ export default function StockTable() {
                               }}                     
                           >
                               <Typography variant="body2" sx={{ fontWeight: 400, color: '#64748b' }}>
-                                  {row.dividends?.[0]?.exDividendDate
-                                  ? new Date(row.dividends?.[0]?.exDividendDate).toLocaleDateString("th-TH", {
+                                  {row.dividendExDate
+                                  ? new Date(row.dividendExDate).toLocaleDateString("th-TH", {
                                       year: "numeric",
                                       month: "short",
                                       day: "numeric",
@@ -325,7 +356,7 @@ export default function StockTable() {
                           <TableCell align="right">
                           <Typography variant="body2" sx={{ fontWeight: 600, color: '#1e293b' }}>
                               <FormattedNumberDisplay
-                                  value={row.dividends?.[0]?.dividendPerShare ?? '-'} 
+                                  value={row.dividendDps ?? '-'} 
                                   decimalScale={2} 
                               />
                           </Typography>

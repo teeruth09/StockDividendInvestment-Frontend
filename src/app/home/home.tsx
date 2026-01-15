@@ -104,7 +104,7 @@ export default function StockTable() {
 
   useEffect(() => {
     fetchData();
-  }, [fetchData]);
+  }, [page, rowsPerPage, orderBy, order]);
 
   // Handlers สำหรับ Table Events
   const handleRequestSort = (event: React.MouseEvent<unknown>, property: string) => {
@@ -123,7 +123,7 @@ export default function StockTable() {
     setPage(0);
   };
 
-  const handleClear = () => {
+  const handleClear = async () => {
     setSearch("");
     setSector("");
     setCluster("");
@@ -133,6 +133,35 @@ export default function StockTable() {
     setStartDate("");
     setEndDate("")
     setPage(0);
+
+    setLoading(true);
+    try {
+      const response = await getRecommendedStockApi({
+        page: page + 1, // MUI เริ่มที่ 0 แต่ API เริ่มที่ 1
+        limit: rowsPerPage,
+        sortBy: orderBy,
+        order: order,
+        search: undefined,
+        sector: undefined,
+        cluster: undefined,
+        startDate: undefined,
+        endDate: undefined,
+
+        minDy: undefined,
+        minScore: undefined,
+        month: undefined,
+      });
+      if (response?.status === 'success') {
+        setData(response.data || []);
+        setTotalItems(response.meta?.totalItems || 0);
+        // เก็บค่า options เพื่อใช้ใน Dropdown
+        setFilterOptions(response.options);
+      }
+    } catch (error) {
+      console.error("Clear & Fetch Error:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
 
