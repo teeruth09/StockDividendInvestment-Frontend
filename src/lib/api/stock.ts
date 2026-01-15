@@ -4,13 +4,30 @@ import { RawHistoricalPriceData, HistoricalPrice } from "@/types/stock";
 import { mapRawPricesToHistoricalPrices } from "@/utils/stock-mapper";
 import { mapRawStocksToStocks } from "@/utils/stock-mapper";
 
-export async function getStockListApi(params?: { search?: string; sector?: string }) {
-  const query = new URLSearchParams();
+export async function getStockListApi(
+  opts?: { 
+    search?: string; 
+    sector?: string;
+    sortBy?: string;
+    order?: 'asc' | 'desc';
+    month?: number | undefined;
+    startDate?: string | undefined;
+    endDate?: string | undefined;
+  }
 
-  if (params?.search) query.append("search", params.search);
-  if (params?.sector) query.append("sector", params.sector);
+) {
+  const url = new URL(`${process.env.NEXT_PUBLIC_API_URL}/stock/stocks`);
 
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/stock/stocks?${query.toString()}`, {
+  if (opts?.search) url.searchParams.append("search", String(opts.search));
+  if (opts?.sector) url.searchParams.append("sector", String(opts.sector));
+  if (opts?.sortBy) url.searchParams.append("sortBy", String(opts.sortBy));
+  if (opts?.order) url.searchParams.append("order", String(opts.order));
+  if (opts?.month) url.searchParams.append("month", String(opts.month));
+  if (opts?.startDate) url.searchParams.append("startDate", String(opts.startDate));
+  if (opts?.endDate) url.searchParams.append("endDate", String(opts.endDate));
+
+
+  const res = await fetch(url.toString(), {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -22,11 +39,12 @@ export async function getStockListApi(params?: { search?: string; sector?: strin
     const error = await res.json().catch(() => ({}));
     throw new Error(error.message || "Failed to fetch stock list");
   }
-  // 1. รับ Raw Data (Array ของ Snake Case)
-  const rawData: RawStock[] = await res.json();
 
-  // 2. เรียกใช้ Mapper เพื่อแปลง Array เป็น Camel Case
-  return mapRawStocksToStocks(rawData);
+  return res.json();
+
+  // const rawData: RawStock[] = await res.json();
+
+  // return mapRawStocksToStocks(rawData);
 }
 
 // ข้อมูลหุ้น (filter by year, from, to)

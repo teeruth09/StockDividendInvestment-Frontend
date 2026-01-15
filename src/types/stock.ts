@@ -87,6 +87,19 @@ export type StockSummary = {
   summary: Partial<Record<Timeframe, StockSummaryItem>>;
 };
 
+export interface StockListResponse {
+  stockSymbol: string;
+  stockSector: string;
+  latestOpenPrice: number;
+  latestHighPrice: number;
+  latestLowPrice: number;
+  latestClosePrice: number;
+  latestPriceChange: number;
+  latestPercentChange: number;
+  dividendExDate: Date | null;
+  dividendDps: number;
+}
+
 
 //transaction Buy
 // รายละเอียดประกาศปันผล
