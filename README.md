@@ -1,6 +1,4 @@
-### STOCK INVESTMENT AND TAX DEDUCTION FROM DIVIDEND TAX CREDIT
-
-## Getting Started
+## STOCK INVESTMENT AND TAX DEDUCTION FROM DIVIDEND TAX CREDIT
 
 First, install package:
 ```bash
@@ -15,28 +13,48 @@ Second, run the development server:
 npm run dev
 ```
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-
 ## Preview
-HomePage, show recommended stocks:
+
+### Home Page  
+Displays recommended stocks based on the scoring system.
 
 <p align="center">
   <img 
     src="https://raw.githubusercontent.com/teeruth09/images/main/stockDividend/stockMainPage.png"
     width="900"
     alt="Stock Home Page"
+  />
+</p>
+
+### Stock Analysis  
+Provides detailed stock analysis calculated by the backend.
+
+<p align="center">
+  <img 
+    src="https://raw.githubusercontent.com/teeruth09/images/main/stockDividend/stockAnalysis.png"
+    width="900"
+    alt="Stock Analysis"
+  />
+</p>
+
+### Portfolio  
+Simulates an investment portfolio with detailed investment metrics.
+
+<p align="center">
+  <img 
+    src="https://raw.githubusercontent.com/teeruth09/images/main/stockDividend/stockPortfolioPage.png"
+    width="900"
+    alt="Stock Portfolio Page"
+  />
+</p>
+
+### Tax Calculation  
+Calculates dividend tax and demonstrates how tax credits can reduce the total tax burden.
+
+<p align="center">
+  <img 
+    src="https://raw.githubusercontent.com/teeruth09/images/main/stockDividend/stockDividendTaxCredit.png"
+    width="900"
+    alt="Stock Dividend Tax Credit"
   />
 </p>
