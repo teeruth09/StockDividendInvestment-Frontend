@@ -37,8 +37,8 @@ export default function DividendNavbarMUI() {
   const navigation = [
     { name: 'หน้าแรก', href: '/' },
     { name: 'หุ้น', href: '/stock'},
-    { name: 'ภาพรวมพอร์ต', href: '/portfolio' },
-    { name: 'ประวัติรายการ', href: '/transaction' },
+    { name: 'ภาพรวมพอร์ต', href: '/portfolio', protected: true },
+    { name: 'ประวัติรายการ', href: '/transaction', protected: true },
     { name: 'ปฏิทินหลักทรัพย์', href: '/calendar' },
     { name: 'เกี่ยวกับภาษี', href: '/tax' },
   ]
@@ -56,6 +56,13 @@ export default function DividendNavbarMUI() {
   const handleLogin = () => router.push('/login')
   const handleRegister = () => router.push('/register')
 
+  const visibleNavigation = navigation.filter(item => {
+    if (item.protected && !isLoggedIn) {
+      return false;
+    }
+    return true;
+  })
+
   // Drawer content (Mobile)
   const drawer = (
     <Box onClick={handleDrawerToggle} sx={{ textAlign: 'center' }}>
@@ -63,7 +70,7 @@ export default function DividendNavbarMUI() {
         SITD
       </Typography>
       <List>
-        {navigation.map((item) => (
+        {visibleNavigation.map((item) => (
           <ListItem key={item.name} disablePadding>
             <ListItemButton
               component={Link}
@@ -153,7 +160,7 @@ export default function DividendNavbarMUI() {
           {/* Desktop Navigation */}
           {!isMobile && (
             <Box sx={{ flexGrow: 1, display: 'flex', ml: 4 }}>
-              {navigation.map((item) => (
+              {visibleNavigation.map((item) => (
                 <Button
                   key={item.name}
                   component={Link}

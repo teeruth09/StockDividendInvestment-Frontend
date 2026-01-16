@@ -18,6 +18,7 @@ import { getUserApi, getUserTaxInfoApi, updateUserTaxInfoApi } from '@/lib/api/u
 import { useAuth } from '../contexts/AuthContext';
 import { useAlert } from '@/components/AppSnackbar';
 import { NumericFormat, NumberFormatValues } from 'react-number-format';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 const InvestmentProfileUI: React.FC = () => {
   const { user, token } = useAuth();
@@ -271,93 +272,96 @@ const InvestmentProfileUI: React.FC = () => {
   );
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      {/* Header */}
-      <Card sx={{ mb: 3, borderRadius: 2 }}>
-        <CardContent sx={{ display: 'flex', alignItems: 'center', p: 3 }}>
-          <Avatar sx={{ width: 80, height: 80, mr: 3, bgcolor: '#e0e0e0' }}>
-            <Person sx={{ fontSize: 40, color: '#9e9e9e' }} />
-          </Avatar>
-          <Box sx={{ flex: 1 }}>
-            <Typography variant="h4" fontWeight="bold" gutterBottom>
-              {userData.username}
-            </Typography>
-            <Typography variant="body1" color="text.secondary" gutterBottom>
-              {userData.email}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              ผู้ใช้ขั้นต้น • โปรไฟล์
-            </Typography>
-          </Box>
-          {!isEditing ? (
-            <Button variant="outlined" onClick={handleEdit} sx={{ borderRadius: 2, textTransform: 'none', color: 'text.secondary', borderColor: '#e0e0e0' }}>
-              แก้ไขโปรไฟล์
-            </Button>
-          ) : (
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              <Button variant="contained" color="primary" onClick={handleSave} sx={{ borderRadius: 2, textTransform: 'none' }}>
-                บันทึก
-              </Button>
-              <Button variant="outlined" color="inherit" onClick={handleCancel} sx={{ borderRadius: 2, textTransform: 'none' }}>
-                ยกเลิก
-              </Button>
+    <ProtectedRoute>
+
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        {/* Header */}
+        <Card sx={{ mb: 3, borderRadius: 2 }}>
+          <CardContent sx={{ display: 'flex', alignItems: 'center', p: 3 }}>
+            <Avatar sx={{ width: 80, height: 80, mr: 3, bgcolor: '#e0e0e0' }}>
+              <Person sx={{ fontSize: 40, color: '#9e9e9e' }} />
+            </Avatar>
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="h4" fontWeight="bold" gutterBottom>
+                {userData.username}
+              </Typography>
+              <Typography variant="body1" color="text.secondary" gutterBottom>
+                {userData.email}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                ผู้ใช้ขั้นต้น • โปรไฟล์
+              </Typography>
             </Box>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Main Grid */}
-      <Grid container spacing={3}>
-        <Grid size={{ xs:12 }}>
-          <Card sx={{ borderRadius: 2 }} >
-            <CardContent sx={{ p: 3 }}>
-              {/* Header with Year Select */}
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 3, justifyContent: 'space-between' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <Assessment sx={{ mr: 1, color: 'text.secondary' }} />
-                  <Typography variant="h6" fontWeight="600">
-                    ข้อมูลภาษีส่วนบุคคล
-                  </Typography>
-                </Box>
-
-                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                  <TextField
-                    select
-                    label="ปีภาษี"
-                    value={currentYear}
-                    onChange={(e) => setCurrentYear(Number(e.target.value))}
-                    size="small"
-                  >
-                     {taxYears.map((year) => (
-                        <MenuItem key={year} value={year}>
-                          {year}
-                        </MenuItem>
-                      ))}
-                  </TextField>
-                  <Button variant="outlined" size="small" onClick={handleAddYear}>
-                    เพิ่มปีใหม่
-                  </Button>
-                </Box>
+            {!isEditing ? (
+              <Button variant="outlined" onClick={handleEdit} sx={{ borderRadius: 2, textTransform: 'none', color: 'text.secondary', borderColor: '#e0e0e0' }}>
+                แก้ไขโปรไฟล์
+              </Button>
+            ) : (
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <Button variant="contained" color="primary" onClick={handleSave} sx={{ borderRadius: 2, textTransform: 'none' }}>
+                  บันทึก
+                </Button>
+                <Button variant="outlined" color="inherit" onClick={handleCancel} sx={{ borderRadius: 2, textTransform: 'none' }}>
+                  ยกเลิก
+                </Button>
               </Box>
+            )}
+          </CardContent>
+        </Card>
 
-              {/* แบ่งกลุ่มข้อมูลตาม Model ใหม่ */}
-              {renderFieldGroup("รายได้ (Income)", 
-                ['salary', 'bonus', 'otherIncome'])}
-              
-              {renderFieldGroup("1. ค่าลดหย่อนส่วนตัวและครอบครัว", 
-                ['personalDeduction', 'spouseDeduction', 'childDeduction', 'parentDeduction', 'disabledDeduction'])}
-              
-              {renderFieldGroup("2. กลุ่มประกันและการออม", 
-                ['socialSecurity', 'lifeInsurance', 'healthInsurance', 'parentHealthInsurance', 'pvdDeduction', 'ssfInvestment', 'rmfInvestment', 'thaiesgInvestment'])}
-              
-              {renderFieldGroup("3. กลุ่มอสังหาริมทรัพย์และอื่นๆ", 
-                ['homeLoanInterest', 'donationGeneral', 'donationEducation'])}
+        {/* Main Grid */}
+        <Grid container spacing={3}>
+          <Grid size={{ xs:12 }}>
+            <Card sx={{ borderRadius: 2 }} >
+              <CardContent sx={{ p: 3 }}>
+                {/* Header with Year Select */}
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 3, justifyContent: 'space-between' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Assessment sx={{ mr: 1, color: 'text.secondary' }} />
+                    <Typography variant="h6" fontWeight="600">
+                      ข้อมูลภาษีส่วนบุคคล
+                    </Typography>
+                  </Box>
+
+                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                    <TextField
+                      select
+                      label="ปีภาษี"
+                      value={currentYear}
+                      onChange={(e) => setCurrentYear(Number(e.target.value))}
+                      size="small"
+                    >
+                      {taxYears.map((year) => (
+                          <MenuItem key={year} value={year}>
+                            {year}
+                          </MenuItem>
+                        ))}
+                    </TextField>
+                    <Button variant="outlined" size="small" onClick={handleAddYear}>
+                      เพิ่มปีใหม่
+                    </Button>
+                  </Box>
+                </Box>
+
+                {/* แบ่งกลุ่มข้อมูลตาม Model ใหม่ */}
+                {renderFieldGroup("รายได้ (Income)", 
+                  ['salary', 'bonus', 'otherIncome'])}
                 
-            </CardContent>
-          </Card>
+                {renderFieldGroup("1. ค่าลดหย่อนส่วนตัวและครอบครัว", 
+                  ['personalDeduction', 'spouseDeduction', 'childDeduction', 'parentDeduction', 'disabledDeduction'])}
+                
+                {renderFieldGroup("2. กลุ่มประกันและการออม", 
+                  ['socialSecurity', 'lifeInsurance', 'healthInsurance', 'parentHealthInsurance', 'pvdDeduction', 'ssfInvestment', 'rmfInvestment', 'thaiesgInvestment'])}
+                
+                {renderFieldGroup("3. กลุ่มอสังหาริมทรัพย์และอื่นๆ", 
+                  ['homeLoanInterest', 'donationGeneral', 'donationEducation'])}
+                  
+              </CardContent>
+            </Card>
+          </Grid>
         </Grid>
-      </Grid>
-    </Container>
+      </Container>
+    </ProtectedRoute>
   );
 };
 
