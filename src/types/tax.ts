@@ -60,3 +60,52 @@ export interface TaxResult {
     deductionDetails: Record<string, number>;
     breakdown: TaxBreakdown[];
 }
+
+
+// 1. ส่วนรายละเอียดการคำนวณแต่ละกรณี (Single Case)
+export interface TaxCalculationDetail {
+    incomeType1And2: number,
+    totalGrossDividend: number,
+    totalIncome: number;
+    totalExpenses: number;
+    incomeAfterExpenses: number;
+    netIncome: number;
+    taxBeforeCredit: number;
+    totalTaxCredit: number;
+    withholdingTax10: number;
+    taxFinal: number;
+    refundAmount: number;
+    isRefund: boolean;
+    effectiveRate: number;
+    breakdown: TaxBreakdown[];
+    deductionDetails: Record<string, number>;
+    totalDeductions: number;
+    includeDividendCredit: boolean;
+}
+
+// 2. ส่วนสรุปขั้นบันไดภาษี
+export interface TaxBreakdown {
+    bracket: string;
+    rate: number;
+    amount: number;
+    tax: number;
+}
+
+// 3. ส่วนผลลัพธ์หลัก (Top-level Response)
+export interface TaxResult {
+    hasDividend: boolean;
+    bestChoice: 'WITH_CREDIT' | 'FINAL_TAX' | 'NONE';
+    savings: number;
+    // ใช้คำว่า result เพื่อเก็บทั้ง 2 กรณี หรือกรณีมาตรฐาน
+    result: {
+        withCredit?: TaxCalculationDetail;
+        withoutCredit?: TaxCalculationDetail;
+        standard?: TaxCalculationDetail;
+    };
+    // ข้อมูลดิบของปันผลสำหรับแสดงใน UI สรุป
+    summary: {
+        totalGrossDividend: number;
+        totalTaxCredit: number;
+        withholdingTax10: number;
+    };
+}

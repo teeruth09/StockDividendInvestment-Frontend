@@ -22,6 +22,9 @@ import {
   Divider,
   TableContainer,
   Avatar,
+  ToggleButton,
+  ToggleButtonGroup,
+  Alert,
 } from "@mui/material";
 import CalculateIcon from "@mui/icons-material/Calculate";
 import CreateIcon from '@mui/icons-material/Create';
@@ -29,6 +32,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { CalculateTax, TaxBreakdown, TaxResult } from "@/types/tax";
 import { calculateTaxApi, calculateTaxGuestApi, getTaxInfoApi } from "@/lib/api/tax";
 import NumericInput from "@/components/NumericInput";
+import { DetailedInfo } from "@/components/tax/TaxComparisonView";
 
 const formatCurrency = (n: number | undefined | null) => {
   if (n === undefined || n === null) return "0";
@@ -45,6 +49,8 @@ export default function TaxCalculatorPage(): JSX.Element {
   const [resultOpen, setResultOpen] = useState(false);
 
   const [isEditMode, setIsEditMode] = useState(false);
+
+  const [viewMode, setViewMode] = useState<'withCredit' | 'withoutCredit'>('withCredit');
   
   // 1. ปรับ State ให้ตรงกับ DTO
   const [formData, setFormData] = useState<CalculateTax>({
@@ -219,7 +225,7 @@ export default function TaxCalculatorPage(): JSX.Element {
                 }}
               />
             </Grid>
-            <Grid size={{ xs: 12, sm: 3 }} sx={{ display: 'flex', alignItems: 'center' }}>
+            {/* <Grid size={{ xs: 12, sm: 3 }} sx={{ display: 'flex', alignItems: 'center' }}>
               <FormControlLabel
                 control={
                   <Switch 
@@ -228,7 +234,7 @@ export default function TaxCalculatorPage(): JSX.Element {
                   />}
                 label="นำเครดิตภาษีเงินปันผลมาคำนวณ"
               />
-            </Grid>
+            </Grid> */}
           </Grid>
         </CardContent>
       </Card>
@@ -508,127 +514,57 @@ export default function TaxCalculatorPage(): JSX.Element {
 
       {/* --- ส่วนแสดงผลลัพธ์ (Result) เปลี่ยนมาดึงจาก result state --- */}
       <Collapse in={resultOpen}>
-        <Box mt={3}>
-          <Card sx={{ borderRadius: 2 }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Avatar 
-                  src="/icon/result.png"
-                  variant="square" 
-                  sx={{ width: 32, height: 32 }} 
-                />
-                <Typography variant="h5" fontWeight="bold" gutterBottom>ผลลัพธ์จากระบบ</Typography>
+        {result && (
+          <Box mt={3}>
+            {/* ส่วน Banner แนะนำ (โชว์เฉพาะเมื่อมีปันผล) */}
+            {result.hasDividend && (
+              <Alert severity="success" sx={{ mb: 2, borderRadius: 2 }}>
+                ทางเลือกที่คุ้มที่สุดคือ <b>{result.bestChoice === 'WITH_CREDIT' ? 'ยื่นรวมเครดิตภาษี' : 'ไม่ยื่นรวม (Final Tax)'}</b>
+                <br />ประหยัดไปได้ถึง <b>{formatCurrency(result.savings)}</b> บาท
+              </Alert>
+            )}
+
+            {/* ส่วนเลือกสลับฝั่งการแสดงผล (Toggle) */}
+            {result.hasDividend && (
+              <Box sx={{ mb: 2, display: 'flex', justifyContent: 'center' }}>
+                <ToggleButtonGroup
+                  color="primary"
+                  value={viewMode}
+                  exclusive
+                  onChange={(_, val) => val && setViewMode(val)}
+                  size="small"
+                >
+                  <ToggleButton value="withCredit">ยื่นรวมเครดิตภาษี</ToggleButton>
+                  <ToggleButton value="withoutCredit">ไม่รวม (Final Tax)</ToggleButton>
+                </ToggleButtonGroup>
               </Box>
+            )}
 
-              <Grid container spacing={2} sx={{ mb: 3 }}>
-                <Grid size={{ xs: 12, sm: 6 }}>
-                  <Typography>
-                    รวมเงินได้พึงประเมินตามาตรา 40 (1) และ (2): <b>{formatCurrency(result?.incomeType1And2 ?? 0)}</b> บาท
+            {/* แสดงข้อมูลตามฝั่งที่เลือก */}
+            <Card sx={{ borderRadius: 2, borderTop: '4px solid', borderColor: viewMode === 'withCredit' ? 'success.main' : 'primary.main' }}>
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                  <Avatar src="/icon/result.png" variant="square" sx={{ width: 32, height: 32 }} />
+                  <Typography variant="h6" fontWeight="bold">
+                    {viewMode === 'withCredit' ? 'ผลลัพธ์กรณี: ยื่นรวมเครดิต' : 'ผลลัพธ์กรณี: ไม่รวมเครดิต'}
                   </Typography>
-                  <Typography>
-                    หักค่าใช้จ่าย: <b>{formatCurrency(result?.totalExpenses ?? 0)}</b> บาท
+                </Box>
+
+                {/* เรียกใช้ Component ย่อยที่เราแยกไว้ */}
+                <DetailedInfo result={result.hasDividend ? result.result[viewMode] : result.result.standard} />
+                
+                {/* ส่วนแสดง Effective Rate (เฉพาะฝั่ง) */}
+                <Box mt={3} p={2} bgcolor="#f8f9fa" borderRadius={1}>
+                  <Typography variant="body2">
+                    อัตราภาษีที่แท้จริง (Effective Tax Rate): <b>
+                      {(result.hasDividend ? result.result[viewMode].effectiveRate : result.result.standard.effectiveRate).toFixed(2)}%
+                    </b>
                   </Typography>
-                  <Typography>
-                    รายได้หลังหักค่าใช้จ่าย: <b>{formatCurrency(result?.incomeAfterExpenses ?? 0)}</b> บาท
-                  </Typography>
-                  <Typography>
-                    เงินปันผลรวม: <b>{formatCurrency(result?.totalGrossDividend ?? 0)}</b> บาท
-                  </Typography>
-                  <Typography>
-                    รายได้รวมก่อนลดหย่อน: <b>{formatCurrency(result?.totalIncome ?? 0)}</b> บาท
-                  </Typography>
-                  <Typography>รวมค่าลดหย่อน: <b>{formatCurrency(result?.totalDeductions ?? 0)}</b> บาท</Typography>
-                  <Typography color="primary">รายได้สุทธิ: <b>{formatCurrency(result?.netIncome ?? 0)}</b> บาท</Typography>
-                </Grid>
-                <Grid size={{ xs: 12, sm: 6 }}>
-                  <Typography>ภาษีที่คำนวณได้: <b>{formatCurrency(result?.taxBeforeCredit ?? 0)}</b> บาท</Typography>
-                  <Typography color="success.main">เครดิตภาษีปันผล: {formatCurrency(result?.totalTaxCredit ?? 0)} บาท</Typography>
-                  <Typography color="success.main">ภาษีปันผลหัก ณ ที่จ่าย (10%): {formatCurrency(result?.withholdingTax10 ?? 0)} บาท</Typography>
-                  <Divider sx={{ my: 1 }} />
-                  <Typography variant="h6" color={result?.isRefund ? "success.main" : "error.main"}>
-                    {result?.isRefund ? "ภาษีชำระเกิน (ได้รับคืน): " : "ภาษีที่ต้องชำระเพิ่ม: "}
-                    {formatCurrency(result?.isRefund ? result?.refundAmount : result?.taxFinal)} บาท
-                  </Typography>
-                </Grid>
-              </Grid>
-
-              {/* รายละเอียดค่าลดหย่อน */}
-              <Box mt={4}>
-                <Typography variant="subtitle1" fontWeight="bold" gutterBottom>รายละเอียดค่าลดหย่อนที่ใช้จริง</Typography>
-                <TableContainer component={Paper} variant="outlined">
-                  <Table size="small">
-                    <TableBody>
-                      {result?.deductionDetails && Object.entries(result.deductionDetails).map(([k, v]: [string, number]) => (
-                        <TableRow key={k}>
-                          <TableCell sx={{ bgcolor: '#fafafa', width: '60%' }}>{k}</TableCell>
-                          <TableCell align="right">{formatCurrency(v)} บาท</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              </Box>
-
-              {/* Tax Breakdown */}
-              <Box mt={4}>
-                <Typography variant="subtitle1" fontWeight="bold" gutterBottom>Breakdown ภาษีตามขั้นบันได</Typography>
-                <TableContainer component={Paper} variant="outlined">
-                  <Table size="small">
-                    <TableHead sx={{ bgcolor: '#f5f5f5' }}>
-                      <TableRow>
-                        <TableCell>ขั้นบันได</TableCell>
-                        <TableCell align="right">อัตรา (%)</TableCell>
-                        <TableCell align="right">เงินได้ในขั้นนี้</TableCell>
-                        <TableCell align="right">ภาษีที่คำนวณได้</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {result?.breakdown?.map((row: TaxBreakdown, i: number) => (
-                        <TableRow key={i}>
-                          <TableCell>{row.bracket}</TableCell>
-                          <TableCell align="right">{row.rate}%</TableCell>
-                          <TableCell align="right">{formatCurrency(row.amount)}</TableCell>
-                          <TableCell align="right">{formatCurrency(row.tax)}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              </Box>
-
-            <Box mt={3} p={2} bgcolor="#f8f9fa" borderRadius={1}>
-              <Typography variant="subtitle2" gutterBottom>
-                * อัตราภาษีที่แท้จริง (Effective Tax Rate):
-              </Typography>
-              
-              <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                <Typography variant="body2">
-                  ก่อนใช้เครดิตภาษีเงินปันผล:{" "}
-                  <b style={{ color: getRateColor(result?.effectiveRateBefore ?? 0, result?.effectiveRateAfter ?? 0) }}>
-                    {result?.effectiveRateBefore?.toFixed(2)}%
-                  </b>
-                </Typography>
-
-                <Divider orientation="vertical" flexItem />
-
-                <Typography variant="body2">
-                  หลังใช้เครดิตภาษีเงินปันผล:{" "}
-                  <b style={{ color: getRateColor(result?.effectiveRateAfter ?? 0, result?.effectiveRateBefore ?? 0) }}>
-                    {result?.effectiveRateAfter?.toFixed(2)}%
-                  </b>
-                </Typography>
-              </Box>
-
-              {/* คำแนะนำเพิ่มเติมเพื่อให้ User เข้าใจง่ายขึ้น */}
-              {(result?.effectiveRateAfter ?? 0) < (result?.effectiveRateBefore ?? 0) && (
-                <Typography variant="caption" color="success.main" sx={{ mt: 1, display: 'block' }}>
-                  🎉 ยอดเยี่ยม! การใช้เครดิตภาษีช่วยให้คุณประหยัดภาษีได้จริง {((result?.effectiveRateAfter ?? 0) - (result?.effectiveRateBefore ?? 0)).toFixed(2)}%
-                </Typography>
-              )}
-            </Box>
-            </CardContent>
-          </Card>
-        </Box>
+                </Box>
+              </CardContent>
+            </Card>
+          </Box>
+        )}
       </Collapse>
     </Box>
   );
