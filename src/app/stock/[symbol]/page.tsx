@@ -55,13 +55,15 @@ import { getAnalyzeTdtsApi, getCombinedAnalysisApi, getTechnicalHistoryApi } fro
 import TechnicalAnalysisView from '@/components/analysis/TechnicalAnalysis';
 import { formatDate } from '@/lib/helpers/format';
 import { InfoOutlined, Psychology, Warning } from '@mui/icons-material';
+import GgmAnalysis from '@/components/analysis/GgmAnalysis';
+import { getValuationGgmApi } from '@/lib/api/ggm';
 
 
 ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, ChartTooltip, Legend);
 
 type StockChartData = ChartData<'line', number[], string>; // labels เป็น string, data เป็น number
 
-type InfoTabKey = 'info' | 'dividend' | 'history' | 'analysis' | 'technical';
+type InfoTabKey = 'info' | 'dividend' | 'history' | 'analysis'| 'ggm' | 'technical';
 
 
 export default function StockDetailPage() {
@@ -264,6 +266,8 @@ export default function StockDetailPage() {
     //ก้อนวิเคราะห์ (แนะนำ: โหลดเฉพาะเมื่อ User ต้องการดู)
     const [analysisData, setAnalysisData] = useState(null);
     const [isAnalysisLoading, setIsAnalysisLoading] = useState(false);
+    const [ggmData, setGgmData] = useState(null);
+    const [isGgmLoading, setIsGgmLoading] = useState(false);
     const [technicalData, setTechnicalData] = useState(null);
     const [isTechnicalLoading, setIsTechnicalLoading] = useState(false);
 
@@ -284,6 +288,17 @@ export default function StockDetailPage() {
                     setError("โหลดบทวิเคราะห์ไม่สำเร็จ");
                 } finally {
                     setIsAnalysisLoading(false);
+                }
+            }
+            else if (activeTab === 'ggm' && !ggmData && symbol) {
+                setIsAnalysisLoading(true);
+                try {
+                    const res = await getValuationGgmApi(symbol);
+                    setGgmData(res);
+                } catch (err) {
+                    setError("โหลดบทวิเคราะห์ไม่สำเร็จ");
+                } finally {
+                    setIsGgmLoading(false);
                 }
             }
             else if (activeTab === 'technical' && !technicalData && symbol) {
@@ -450,6 +465,7 @@ export default function StockDetailPage() {
                         <Tab label="ข้อมูลเงินปันผล" value="dividend" />
                         <Tab label="ราคาย้อนหลัง" value="history" />
                         <Tab label="บทวิเคราะห์" value="analysis" />
+                        <Tab label="วิเคราะห์มูลค่าที่เหมาะสม" value="ggm" />
                         <Tab label="กราฟเทคนิค" value="technical" />
                     </Tabs>
 
@@ -502,7 +518,29 @@ export default function StockDetailPage() {
                                 
                             </Box>
                         )}
-                        {/* 5. กราฟเทคนิค */}
+                        {/* 5. บทวิเคราะห์มูลค่าที่เหมาะสม" */}
+                        {activeTab === 'ggm' && (
+                            <Box sx={{ minHeight: 300 }}>
+                                <Typography variant="subtitle1">วิเคราะห์มูลค่าที่เหมาะสม</Typography>
+                                {isGgmLoading ? (
+                                    // แสดง Loading เฉพาะส่วน Analysis
+                                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 5 }}>
+                                        <CircularProgress />
+                                        <Typography sx={{ mt: 2 }}>กำลังวิเคราะห์ข้อมูล GGM...</Typography>
+                                    </Box>
+                                ) : ggmData ? (
+                                    <GgmAnalysis 
+                                        data={ggmData.data || []} 
+                                        //source={analysisData.source}
+                                    />
+                                ) : (
+                                    <Alert severity="info">ไม่พบข้อมูลบทวิเคราะห์สำหรับหุ้นตัวนี้</Alert>
+                                )}
+                                
+                            </Box>
+                        )}
+
+                        {/* 6. กราฟเทคนิค */}
                         {activeTab === 'technical' && (
                             <Box sx={{ minHeight: 300 }}>
                                 <Typography variant="subtitle1">วิเคราะห์กราฟทางการเทคนิค</Typography>

@@ -68,7 +68,13 @@ export default function TechnicalAnalysisView({ data, symbol }: Props) {
           <TableBody>
             {displayData.map((row, index) => (
               <TableRow key={index} hover>
-                <TableCell sx={{ fontSize: '0.8rem' }}>{row.Date}</TableCell>
+                <TableCell sx={{ fontWeight: 600 }}>
+                  {new Date(row.Date).toLocaleDateString("th-TH", {
+                      year: "numeric",
+                      month: "short",
+                      day: "numeric",
+                  })}
+                </TableCell>
                 <TableCell align="right" sx={{ fontWeight: 600 }}>{row.Close.toFixed(2)}</TableCell>
                 <TableCell align="right" sx={{ 
                   color: row.RSI >= 70 ? 'error.main' : row.RSI <= 30 ? 'success.main' : 'inherit',
