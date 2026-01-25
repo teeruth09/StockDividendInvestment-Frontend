@@ -18,6 +18,16 @@ export function getChangeColor(value: number | null | undefined) {
     return 'inherit';
 };
 
+//Check Text Color
+export function getChangeTextColor(value: string | null | undefined) {
+    if (value === undefined || value === null) return 'inherit';
+
+    if (value === 'Undervalue') return '#4caf50';
+
+    if (value === 'Overvalue') return '#f44336';
+
+    return 'inherit';
+};
 
 export const CLUSTER_STYLES: Record<string, { bg: string; color: string; label: string }> = {
   DIVIDEND_TRAP: { 
