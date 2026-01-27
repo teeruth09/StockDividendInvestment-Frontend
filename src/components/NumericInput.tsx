@@ -1,54 +1,37 @@
 import React from 'react';
-import { NumericFormat, NumberFormatValues } from 'react-number-format';
 import { TextField, TextFieldProps } from '@mui/material';
+import { NumericFormatCustom } from './NumericFormatCustom';
 
 interface CustomNumericInputProps {
-  value: number | string | null | undefined; 
-  onValueChange: (value: number | string) => void;
+  value: number | null;
+  onValueChange: (value: number | null) => void;
   label: string;
-  textFieldProps?: TextFieldProps; 
+  textFieldProps?: TextFieldProps;
 }
 
-export default function NumericInput({ 
-    value, 
-    onValueChange, 
-    label, 
-    textFieldProps = {} 
+export default function NumericInput({
+  value,
+  onValueChange,
+  label,
+  textFieldProps = {},
 }: CustomNumericInputProps) {
 
-    const handleNumericChange = (values: NumberFormatValues) => {
-        const numericValue = values.value; 
-
-        if (numericValue === '') {
-            onValueChange(''); 
-        } else {
-            onValueChange(Number(numericValue)); 
-        }
-    };
-
-    let inputValue: number | string | null | undefined;
-    
-    if (value === null || value === undefined || value === '') {
-        inputValue = '';
-    } else {
-        // ถ้าไม่เป็น null/undefined/'' มันจะเป็น number หรือ string แน่ๆ
-        inputValue = value as number | string;
-    }
-
-    return (
-        <NumericFormat
-            thousandSeparator={true} 
-            decimalScale={2}         
-            allowNegative={false}    
-            value={inputValue} 
-            onValueChange={handleNumericChange}       
-            customInput={TextField}
-            label={label}
-            // ... (Props อื่นๆ) ...
-            {...textFieldProps} 
-            fullWidth 
-            size="small"
-            InputLabelProps={{ shrink: true }}
-        />
+  return (
+    <TextField
+      {...textFieldProps}
+      label={label}
+      value={value ?? ''}
+      fullWidth
+      size="small"
+      InputLabelProps={{ shrink: true }}
+      InputProps={{
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        inputComponent: NumericFormatCustom as any,
+      }}
+      onChange={(e) => {
+        const v = e.target.value;
+        onValueChange(v === '' ? null : Number(v));
+      }}
+    />
   );
 }
