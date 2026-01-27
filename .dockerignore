@@ -3,8 +3,10 @@ node_modules
 out
 build
 dist
-.env*.local
+.env*
+!.env.example
 .git
+.gitignore
 .vscode
 docker-compose.yml
 Dockerfile
