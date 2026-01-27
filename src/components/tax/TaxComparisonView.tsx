@@ -1,115 +1,106 @@
-import { TaxBreakdown } from '@/types/tax';
-import { CheckCircleOutline, TrendingDown, InfoOutlined } from '@mui/icons-material';
-import { Alert, Box, Card, CardContent, Chip, Divider, Grid, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
-import { useState } from 'react';
+import { TaxBreakdown, TaxCalculationDetail} from '@/types/tax';
+import {  Box, Grid, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from '@mui/material';
 
-// ฟังก์ชัน Helper สำหรับสี % ภาษี
-const getRateColor = (current: number, comparison: number) => {
-  if (current < comparison) return "#2e7d32"; 
-  if (current > comparison) return "#d32f2f";
-  return "text.secondary";
-};
 
 const formatCurrency = (n: number | undefined | null) => {
   if (n === undefined || n === null) return "0";
   return new Intl.NumberFormat("th-TH", { maximumFractionDigits: 2 }).format(n);
 };
 
-export const TaxComparisonView = ({ data }: { data: any }) => {
-  // สร้าง State เพื่อเลือกว่าจะดูรายละเอียดฝั่งไหน (Default ตามที่ระบบแนะนำ)
-  const [viewMode, setViewMode] = useState<'withCredit' | 'withoutCredit'>(
-    data.bestChoice === 'FINAL_TAX' ? 'withoutCredit' : 'withCredit'
-  );
+// export const TaxComparisonView = ({ data }: { data: any }) => {
+//   // สร้าง State เพื่อเลือกว่าจะดูรายละเอียดฝั่งไหน (Default ตามที่ระบบแนะนำ)
+//   const [viewMode, setViewMode] = useState<'withCredit' | 'withoutCredit'>(
+//     data.bestChoice === 'FINAL_TAX' ? 'withoutCredit' : 'withCredit'
+//   );
 
-  // ดึงข้อมูลฝั่งที่กำลังดูอยู่มาแสดง
-  const currentResult = viewMode === 'withCredit' ? data.result.withCredit : data.result.withoutCredit;
+//   // ดึงข้อมูลฝั่งที่กำลังดูอยู่มาแสดง
+//   const currentResult = viewMode === 'withCredit' ? data.result.withCredit : data.result.withoutCredit;
 
-  return (
-    <Box mt={3}>
-      {/* --- 1. Best Choice Banner --- */}
-      {data.hasDividend && (
-        <Alert 
-          severity="success" 
-          icon={<CheckCircleOutline fontSize="large" />}
-          sx={{ mb: 3, borderRadius: 2, alignItems: 'center' }}
-        >
-          <Box>
-            <Typography variant="h6" fontWeight="bold">
-              ทางเลือกที่แนะนำ: {data.bestChoice === 'WITH_CREDIT' ? 'ยื่นรวมเครดิตภาษี' : 'ไม่ยื่นรวม (Final Tax)'}
-            </Typography>
-            <Typography variant="body1">
-              วิธีนี้ช่วยให้คุณประหยัดภาษีได้เพิ่มขึ้น <b>{formatCurrency(data.savings)}</b> บาท
-            </Typography>
-          </Box>
-        </Alert>
-      )}
+//   return (
+//     <Box mt={3}>
+//       {/* --- 1. Best Choice Banner --- */}
+//       {data.hasDividend && (
+//         <Alert 
+//           severity="success" 
+//           icon={<CheckCircleOutline fontSize="large" />}
+//           sx={{ mb: 3, borderRadius: 2, alignItems: 'center' }}
+//         >
+//           <Box>
+//             <Typography variant="h6" fontWeight="bold">
+//               ทางเลือกที่แนะนำ: {data.bestChoice === 'WITH_CREDIT' ? 'ยื่นรวมเครดิตภาษี' : 'ไม่ยื่นรวม (Final Tax)'}
+//             </Typography>
+//             <Typography variant="body1">
+//               วิธีนี้ช่วยให้คุณประหยัดภาษีได้เพิ่มขึ้น <b>{formatCurrency(data.savings)}</b> บาท
+//             </Typography>
+//           </Box>
+//         </Alert>
+//       )}
 
-      {/* --- 2. Comparison Cards (Side-by-Side) --- */}
-      <Grid container spacing={2} sx={{ mb: 4 }}>
-        {[
-          { key: 'withCredit', label: 'ยื่นรวมเครดิตภาษี', icon: '💰' },
-          { key: 'withoutCredit', label: 'ไม่ยื่นรวม (Final Tax)', icon: '🛡️' }
-        ].map((item) => {
-          const isSelected = viewMode === item.key;
-          const sideData = data.result[item.key];
-          const isBest = (item.key === 'withCredit' && data.bestChoice === 'WITH_CREDIT') || 
-                         (item.key === 'withoutCredit' && data.bestChoice === 'FINAL_TAX');
+//       {/* --- 2. Comparison Cards (Side-by-Side) --- */}
+//       <Grid container spacing={2} sx={{ mb: 4 }}>
+//         {[
+//           { key: 'withCredit', label: 'ยื่นรวมเครดิตภาษี', icon: '💰' },
+//           { key: 'withoutCredit', label: 'ไม่ยื่นรวม (Final Tax)', icon: '🛡️' }
+//         ].map((item) => {
+//           const isSelected = viewMode === item.key;
+//           const sideData = data.result[item.key];
+//           const isBest = (item.key === 'withCredit' && data.bestChoice === 'WITH_CREDIT') || 
+//                          (item.key === 'withoutCredit' && data.bestChoice === 'FINAL_TAX');
 
-          return (
-            <Grid size={{ xs: 12, md: 6 }} key={item.key}>
-              <Card 
-                variant="outlined"
-                onClick={() => setViewMode(item.key as any)}
-                sx={{ 
-                  cursor: 'pointer',
-                  transition: '0.2s',
-                  border: isSelected ? '2px solid #2e7d32' : '1px solid #e0e0e0',
-                  bgcolor: isSelected ? '#f1f8e9' : 'inherit',
-                  '&:hover': { boxShadow: 3 }
-                }}
-              >
-                <CardContent>
-                  <Box display="flex" justifyContent="space-between" alignItems="flex-start">
-                    <Typography variant="subtitle1" fontWeight="bold">
-                      {item.icon} {item.label}
-                    </Typography>
-                    {isBest && <Chip label="คุ้มที่สุด" color="success" size="small" />}
-                  </Box>
-                  <Divider sx={{ my: 1.5 }} />
-                  <Box display="flex" justifyContent="space-between" mb={1}>
-                    <Typography variant="body2" color="text.secondary">ภาษีที่ต้องจ่ายสุทธิ:</Typography>
-                    <Typography variant="h6" fontWeight="bold" color={sideData.isRefund ? "success.main" : "error.main"}>
-                      {sideData.isRefund ? `-${formatCurrency(sideData.refundAmount)}` : formatCurrency(sideData.taxFinal)} บาท
-                    </Typography>
-                  </Box>
-                  <Typography variant="caption" color="text.secondary">
-                    อัตราภาษีที่แท้จริง: <b>{sideData.effectiveRate.toFixed(2)}%</b>
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-          );
-        })}
-      </Grid>
+//           return (
+//             <Grid size={{ xs: 12, md: 6 }} key={item.key}>
+//               <Card 
+//                 variant="outlined"
+//                 onClick={() => setViewMode(item.key as any)}
+//                 sx={{ 
+//                   cursor: 'pointer',
+//                   transition: '0.2s',
+//                   border: isSelected ? '2px solid #2e7d32' : '1px solid #e0e0e0',
+//                   bgcolor: isSelected ? '#f1f8e9' : 'inherit',
+//                   '&:hover': { boxShadow: 3 }
+//                 }}
+//               >
+//                 <CardContent>
+//                   <Box display="flex" justifyContent="space-between" alignItems="flex-start">
+//                     <Typography variant="subtitle1" fontWeight="bold">
+//                       {item.icon} {item.label}
+//                     </Typography>
+//                     {isBest && <Chip label="คุ้มที่สุด" color="success" size="small" />}
+//                   </Box>
+//                   <Divider sx={{ my: 1.5 }} />
+//                   <Box display="flex" justifyContent="space-between" mb={1}>
+//                     <Typography variant="body2" color="text.secondary">ภาษีที่ต้องจ่ายสุทธิ:</Typography>
+//                     <Typography variant="h6" fontWeight="bold" color={sideData.isRefund ? "success.main" : "error.main"}>
+//                       {sideData.isRefund ? `-${formatCurrency(sideData.refundAmount)}` : formatCurrency(sideData.taxFinal)} บาท
+//                     </Typography>
+//                   </Box>
+//                   <Typography variant="caption" color="text.secondary">
+//                     อัตราภาษีที่แท้จริง: <b>{sideData.effectiveRate.toFixed(2)}%</b>
+//                   </Typography>
+//                 </CardContent>
+//               </Card>
+//             </Grid>
+//           );
+//         })}
+//       </Grid>
 
-      {/* --- 3. Detailed Breakdown (เดิมที่คุณมี) --- */}
-      <Card sx={{ borderRadius: 2, borderTop: '4px solid #2e7d32' }}>
-        <CardContent>
-          <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <InfoOutlined color="primary" /> รายละเอียดการคำนวณแบบ {viewMode === 'withCredit' ? 'รวมเครดิต' : 'ไม่รวมเครดิต'}
-          </Typography>
+//       {/* --- 3. Detailed Breakdown (เดิมที่คุณมี) --- */}
+//       <Card sx={{ borderRadius: 2, borderTop: '4px solid #2e7d32' }}>
+//         <CardContent>
+//           <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+//             <InfoOutlined color="primary" /> รายละเอียดการคำนวณแบบ {viewMode === 'withCredit' ? 'รวมเครดิต' : 'ไม่รวมเครดิต'}
+//           </Typography>
           
-          {/* เอาส่วน Grid รายละเอียด, Table รายละเอียดค่าลดหย่อน และ Tax Breakdown เดิมของคุณมาแปะตรงนี้ 
-              โดยเปลี่ยนจาก result เป็น currentResult */}
-          <DetailedInfo result={currentResult} />
-        </CardContent>
-      </Card>
-    </Box>
-  );
-};
+//           {/* เอาส่วน Grid รายละเอียด, Table รายละเอียดค่าลดหย่อน และ Tax Breakdown เดิมของคุณมาแปะตรงนี้ 
+//               โดยเปลี่ยนจาก result เป็น currentResult */}
+//           <DetailedInfo result={currentResult} />
+//         </CardContent>
+//       </Card>
+//     </Box>
+//   );
+// };
 
-export const DetailedInfo = ({ result }: { result: any }) => {
-  // เพิ่มการเช็คเพื่อป้องกัน App Crash กรณีข้อมูลยังไม่มา
+export const DetailedInfo = ({ result }: { result:  TaxCalculationDetail }) => {  // เพิ่มการเช็คเพื่อป้องกัน App Crash กรณีข้อมูลยังไม่มา
   if (!result) return null;
 
   const isWithCredit = result.includeDividendCredit;

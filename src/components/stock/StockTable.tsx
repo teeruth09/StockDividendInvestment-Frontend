@@ -14,7 +14,7 @@ import { EnhancedTableHead } from "@/components/home/HeadTable";
 import { StockSector } from "@/types/enum";
 import FormattedNumberDisplay from "@/components/FormattedNumberDisplay";
 import Link from "next/link";
-import { Stock, StockListResponse } from "@/types/stock";
+import { StockListResponse } from "@/types/stock";
 import { getStockListApi } from "@/lib/api/stock";
 import StockSearchToolbar from "./StockSearchBar";
 import { getChangeColor } from "@/lib/helpers/colorHelper";
@@ -45,6 +45,7 @@ export default function StockTable() {
   const [stocksData, setStocksData] = useState<StockListResponse[]>([]);  
   const [loading, setLoading] = useState(false);
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [dense, setDense] = useState(false);
   const [order, setOrder] = useState<'asc' | 'desc'>('asc');
   const [orderBy, setOrderBy] = useState<string>('stock_symbol');
@@ -80,6 +81,7 @@ export default function StockTable() {
 
   useEffect(() => {
     fetchData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orderBy, order]);
 
   // ฟังก์ชันจัดการการเรียงลำดับข้อมูลในหน้าเดียว (Client-side Sorting)

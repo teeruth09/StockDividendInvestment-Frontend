@@ -43,7 +43,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { useAuth } from '@/app/contexts/AuthContext';
 import { createBuyTransactionApi, createSellTransactionApi } from '@/lib/api/transaction';
 import { mapTradeFormDataToPayload } from '@/utils/transaction-mapper';
-import { TradeFormData, TransactionPayload } from '@/types/transaction';
+import { TradeFormData, } from '@/types/transaction';
 import PriceHistoryTable from '@/components/stock/PriceHistoryTable';
 import DividendHistoryTable from '@/components/dividend/DividendHistoryTable';
 import StockInfoTab from '@/components/stock/StockInfoTab';
@@ -51,12 +51,15 @@ import { getLatestDividendApi } from '@/lib/api/dividend';
 import FormattedNumberDisplay from '@/components/FormattedNumberDisplay';
 import NumericInput from '@/components/NumericInput';
 import DividendAnalysis from '@/components/analysis/DividendAnalysis';
-import { getAnalyzeTdtsApi, getCombinedAnalysisApi, getTechnicalHistoryApi } from '@/lib/api/analysis';
+import {  getCombinedAnalysisApi, getTechnicalHistoryApi } from '@/lib/api/analysis';
 import TechnicalAnalysisView from '@/components/analysis/TechnicalAnalysis';
 import { formatDate } from '@/lib/helpers/format';
-import { InfoOutlined, Psychology, Warning } from '@mui/icons-material';
+import { InfoOutlined, Warning } from '@mui/icons-material';
 import GgmAnalysis from '@/components/analysis/GgmAnalysis';
 import { getValuationGgmApi } from '@/lib/api/ggm';
+import { AnalysisResponse } from '@/types/analysis';
+import { GgmApiResponse } from '@/types/ggm';
+import { TechinicalAnalysisApiResponse } from '@/types/technical';
 
 
 ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, ChartTooltip, Legend);
@@ -81,6 +84,7 @@ export default function StockDetailPage() {
         datasets: [],
     });
     const [summary, setSummary] = useState<StockSummary | null>(null);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [latestPrice, setLatestPrice] = useState<number | null>(null);
     const [latestHistoricalPrice, setLatestHistoricalPrice] = useState<HistoricalPrice | null>(null);
     const [latestDividend, setLatestDividend] = useState<Dividend | null>(null);
@@ -264,12 +268,12 @@ export default function StockDetailPage() {
     }, [latestPrice]);
 
     //ก้อนวิเคราะห์ (แนะนำ: โหลดเฉพาะเมื่อ User ต้องการดู)
-    const [analysisData, setAnalysisData] = useState(null);
+    const [analysisData, setAnalysisData] = useState<AnalysisResponse | null>(null);
     const [isAnalysisLoading, setIsAnalysisLoading] = useState(false);
-    const [ggmData, setGgmData] = useState(null);
+    const [ggmData, setGgmData] = useState<GgmApiResponse | null>(null);
     const [isGgmLoading, setIsGgmLoading] = useState(false);
-    const [technicalData, setTechnicalData] = useState(null);
-    const [isTechnicalLoading, setIsTechnicalLoading] = useState(false);
+    const [technicalData, setTechnicalData] = useState<TechinicalAnalysisApiResponse | null>(null);
+    const [, setIsTechnicalLoading] = useState(false);
 
     useEffect(() => {
         setAnalysisData(null); 
@@ -285,7 +289,7 @@ export default function StockDetailPage() {
                     const res = await getCombinedAnalysisApi(symbol);
                     setAnalysisData(res);
                 } catch (err) {
-                    setError("โหลดบทวิเคราะห์ไม่สำเร็จ");
+                    setError(`โหลดบทวิเคราะห์ไม่สำเร็จ ${err}`);
                 } finally {
                     setIsAnalysisLoading(false);
                 }
@@ -296,7 +300,7 @@ export default function StockDetailPage() {
                     const res = await getValuationGgmApi(symbol);
                     setGgmData(res);
                 } catch (err) {
-                    setError("โหลดบทวิเคราะห์ไม่สำเร็จ");
+                    setError(`โหลดบทวิเคราะห์ไม่สำเร็จ ${err}`);
                 } finally {
                     setIsGgmLoading(false);
                 }
@@ -307,7 +311,7 @@ export default function StockDetailPage() {
                     const res = await getTechnicalHistoryApi(symbol);
                     setTechnicalData(res);
                 } catch (err) {
-                    setError("โหลดวิเคราะห์กราฟเทคนิคไม่สำเร็จ");
+                    setError(`โหลดวิเคราะห์กราฟเทคนิคไม่สำเร็จ ${err}`);
                 } finally {
                     setIsTechnicalLoading(false);
                 }
@@ -315,7 +319,7 @@ export default function StockDetailPage() {
         };
 
         fetchAnalysis();
-    }, [symbol, activeTab, analysisData, technicalData]);
+    }, [symbol, activeTab, analysisData, technicalData, ggmData]);
 
     
     const [purchaseBenefit, setPurchaseBenefit] = useState<PurchaseMetadataResponse | null>(null);
@@ -355,6 +359,7 @@ export default function StockDetailPage() {
         if (tradeMode === 0 && tradeDate && tradeQty > 0) {
             handleTradeDateChange(tradeDate);
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [tradeQty]); // เมื่อจำนวนหุ้นเปลี่ยน ให้ไปคำนวณปันผลใหม่
 
     const [isLoading, setIsLoading] = useState(true);
@@ -366,8 +371,7 @@ export default function StockDetailPage() {
     if (error) {
         return <Alert severity="error" sx={{ m: 3 }}>{error}</Alert>;
     }
-    
-
+   
     return (
         <Box sx={{ p: 3 }}>
         <Grid container spacing={2}>
@@ -627,12 +631,14 @@ export default function StockDetailPage() {
                         <TextField fullWidth type="number" label="จำนวนหุ้น" value={tradeQty} onChange={(e) => setTradeQty(Number(e.target.value))} />
                         <NumericInput
                             label="ราคาต่อหุ้น (บาท)"
-                            value={tradePrice ?? latestPrice ?? ""} 
-                            onValueChange={(value) => setTradePrice(value === '' ? null : Number(value))}                             
+                            value={tradePrice ?? latestPrice ?? null}
+                            onValueChange={(value) =>
+                                setTradePrice(typeof value === 'number' ? value : null)
+                            }
                             textFieldProps={{ 
                                 fullWidth: true,
-                                disabled: true, //Disaple เพราะเป็นราคาปิดวันนั้นห้ามกำหนดเอง
-                                InputLabelProps: { shrink: true } 
+                                disabled: true,
+                                InputLabelProps: { shrink: true }
                             }}
                         />
                         <Box sx={{ mt: 2, display: "flex", flexDirection: "column", gap: 0.5, borderTop: '1px solid #eee', pt: 1 }}>

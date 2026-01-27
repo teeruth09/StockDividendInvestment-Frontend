@@ -1,3 +1,6 @@
+import { AnalysisResponse } from "@/types/analysis";
+import { TechinicalAnalysisApiResponse } from "@/types/technical";
+
 // ข้อมูลวิเคราะห์ TDTS Scoring
 export async function getAnalyzeTdtsApi(
     symbol: string, 
@@ -34,7 +37,7 @@ export async function getAnalyzeTdtsApi(
 // วิเคราะห์กราฟทางเทคนิค
 export async function getTechnicalHistoryApi(
     symbol: string, 
-) {
+):Promise<TechinicalAnalysisApiResponse> {
     const url = new URL(`${process.env.NEXT_PUBLIC_API_URL}/stock/technical-history/${symbol}`);
     
     const res = await fetch(url.toString(), {
@@ -62,7 +65,7 @@ export async function getCombinedAnalysisApi(
         threshold?: number;
         window?: number; 
     }
-) {
+): Promise<AnalysisResponse> {
     const url = new URL(`${process.env.NEXT_PUBLIC_API_URL}/stock/analyze-combined/${symbol}`);
     
     // ใส่ Parameter ตามที่ Backend กำหนด

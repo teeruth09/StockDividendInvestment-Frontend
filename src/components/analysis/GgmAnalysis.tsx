@@ -13,39 +13,15 @@ import {
 } from "@mui/material";
 import FormattedNumberDisplay from "../FormattedNumberDisplay";
 import { getChangeColor, getChangeTextColor } from "@/lib/helpers/colorHelper";
-
-// แปลง Interface ให้เป็นตามรูปแบบข้อมูลที่ได้จาก API (และรองรับการ Map)
-export interface DividendFlow {
-  D1: number;
-  D2: number;
-  D3: number;
-}
-
-interface GgmAnalysisData{
-  symbol: string;
-  currentPrice: number;
-  predictPrice: number;
-  diffPercent: number;
-  meaning: string;
-  dividendsFlow: DividendFlow;
-}
+import { GgmValuationDataResponse } from "@/types/ggm";
 
 interface GgmAnalysisProps {
-  data: any[]; // รับดิบๆ มาจาก API แล้วเรามา Map ข้างใน
+  data: GgmValuationDataResponse[]; // รับดิบๆ มาจาก API แล้วเรามา Map ข้างใน
   isLoading?: boolean;
 }
 
 export default function GgmAnalysis({ data, isLoading }: GgmAnalysisProps) {
   
-  const mappedData: GgmAnalysisData[] = data.map((item) => ({
-    symbol: item.symbol,
-    currentPrice: item.currentPrice,
-    predictPrice: item.predictPrice,
-    diffPercent: item.diffPercent,
-    meaning: item.meaning,
-    dividendsFlow: item.dividendsFlow,
-  }));
-
   return (
     <Box>
       <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold', color: 'primary.main', mt: 2 }}>
@@ -69,10 +45,10 @@ export default function GgmAnalysis({ data, isLoading }: GgmAnalysisProps) {
           <TableBody>
             {isLoading ? (
                <TableRow><TableCell colSpan={6} align="center">กำลังโหลดบทวิเคราะห์มูลค่าที่เหมาะสม...</TableCell></TableRow>
-            ) : mappedData.length === 0 ? (
+            ) : data.length === 0 ? (
                <TableRow><TableCell colSpan={6} align="center">ไม่พบข้อมูลบทวิเคราะห์มูลค่าที่เหมาะสม</TableCell></TableRow>
             ) : (
-              mappedData.map((row, index) => (
+              data.map((row, index) => (
                 <TableRow key={index} hover>
                   
                   {/* ราคาปัจจุบัน (บาท) */}

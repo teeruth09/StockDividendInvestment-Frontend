@@ -68,9 +68,6 @@ export const mapRawStockToStock = (raw: RawStock): Stock => {
         ? mapRawDividendsToDividends(raw.dividends)
         : [];
 
-    // ดึงข้อมูลรายการล่าสุดมาเก็บไว้แยกต่างหาก
-    const latestPrice = historicalPrices[0]; 
-    const latestDiv = dividends[0];
     
     return {
         stockSymbol: raw.stock_symbol,

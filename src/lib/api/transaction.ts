@@ -1,4 +1,4 @@
-import { BuyTransactionData, RawTransactionData, Transaction, TransactionHistoryFilters, TransactionPayload, TransactionResponse } from "@/types/transaction";
+import { RawTransactionData, Transaction, TransactionHistoryFilters, TransactionPayload, TransactionResponse } from "@/types/transaction";
 import { mapRawTransactions, mapRawTransactionToTransaction } from "@/utils/transaction-mapper";
 /**
  * ส่งข้อมูลการทำรายการซื้อหุ้นไปยัง Backend

@@ -1,0 +1,13 @@
+services:
+  next-web:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+      args:
+        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+    container_name: stock-web-prod
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+    ports:
+      - "8080:8080"

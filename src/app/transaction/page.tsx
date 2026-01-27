@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Box, Typography, Tabs, Tab, Paper } from '@mui/material';
+import { Box, Typography, Tabs, Tab } from '@mui/material';
 import TransactionHistoryTable from '@/components/transaction/TransactionHistoryTable';
 import DividendReceivedHistory from '@/components/dividend/DividendRecievedHistory';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';

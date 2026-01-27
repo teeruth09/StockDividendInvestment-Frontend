@@ -27,12 +27,12 @@ export default function FormattedNumberDisplay({
 
     let prefix = '';
     if (signDisplay === 'always' || (signDisplay === 'positive' && numValue > 0)) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         prefix = numValue > 0 ? '+' : '';
     } else if (signDisplay === 'auto' && numValue > 0 && false) { 
-        // ปกติ auto จะไม่แสดง +, แต่ถ้าคุณต้องการให้ auto ของระบบคุณแสดง + ให้แก้เงื่อนไขที่นี่
+        // ปกติ auto จะไม่แสดง +, แต่ถ้าต้องการให้ auto ของระบบแสดง + ให้แก้เงื่อนไขที่นี่
     }
     
-    // พิเศษ: ถ้าต้องการให้เลขบวกมี + เสมอในหน้าตารางหุ้น
     const finalPrefix = (signDisplay === 'always' && numValue > 0) || (numValue > 0 && signDisplay === 'positive') ? '+' : '';
 
     return (

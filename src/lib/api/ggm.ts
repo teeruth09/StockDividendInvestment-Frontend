@@ -1,7 +1,9 @@
+import { GgmApiResponse } from "@/types/ggm";
+
 // วิเคราะห์มูลค่าที่เหมาะสม
 export async function getValuationGgmApi(
     symbol: string, 
-) {
+):Promise<GgmApiResponse> {
     const url = new URL(`${process.env.NEXT_PUBLIC_API_URL}/stock/valuation-ggm/${symbol}`);
     
     const res = await fetch(url.toString(), {

@@ -1,8 +1,7 @@
-import { RawStock, Stock, StockSummary } from "@/types/stock";
+import { StockSummary } from "@/types/stock";
 import { formatDate } from "../helpers/format";
 import { RawHistoricalPriceData, HistoricalPrice } from "@/types/stock"; 
 import { mapRawPricesToHistoricalPrices } from "@/utils/stock-mapper";
-import { mapRawStocksToStocks } from "@/utils/stock-mapper";
 
 export async function getStockListApi(
   opts?: { 

@@ -2,35 +2,35 @@ export interface CalculateTax {
     year: number;
 
     // ===== รายได้ =====
-    salary?: number;
-    bonus?: number;
-    otherIncome?: number;
+    salary: number | null;
+    bonus: number | null;
+    otherIncome: number | null;
 
     // ===== 1. ส่วนตัวและครอบครัว =====
-    personalDeduction?: number; // ปกติ 60,000
-    spouseDeduction?: number; // 60,000 (ไม่มีรายได้)
-    childDeduction?: number; // รวมทั้งหมด
-    parentDeduction?: number; // รวมทั้งหมด
+    personalDeduction: number | null; // ปกติ 60,000
+    spouseDeduction: number | null; // 60,000 (ไม่มีรายได้)
+    childDeduction: number | null; // รวมทั้งหมด
+    parentDeduction: number | null; // รวมทั้งหมด
 
     // ===== 2. ประกัน / กองทุน =====
-    socialSecurity?: number; // cap 9,000
-    lifeInsurance?: number; // รวมประกันชีวิต
-    healthInsurance?: number; // สุขภาพตนเอง
-    parentHealthInsurance?: number; // สุขภาพพ่อแม่ (cap 15,000)
+    socialSecurity: number | null; // cap 9,000
+    lifeInsurance: number | null; // รวมประกันชีวิต
+    healthInsurance: number | null; // สุขภาพตนเอง
+    parentHealthInsurance: number | null; // สุขภาพพ่อแม่ (cap 15,000)
 
-    pvd?: number; // กองทุนสำรองเลี้ยงชีพ
-    rmf?: number; // RMF
-    ssf?: number; // SSF
-    thaiEsg?: number; // Thai ESG
+    pvd: number | null; // กองทุนสำรองเลี้ยงชีพ
+    rmf: number | null; // RMF
+    ssf: number | null; // SSF
+    thaiEsg: number | null; // Thai ESG
 
     // ===== 3. อสังหา / อื่น ๆ =====
-    homeLoanInterest?: number; // cap 100,000
-    donationGeneral?: number; // บริจาคทั่วไป
-    donationEducation?: number; // บริจาคศึกษา (2 เท่า)
+    homeLoanInterest: number | null; // cap 100,000
+    donationGeneral: number | null; // บริจาคทั่วไป
+    donationEducation: number | null; // บริจาคศึกษา (2 เท่า)
 
-    includeDividendCredit?: boolean; //เพิ่มเพื่อเลือกว่าจะรวมปันผลหรือไม่
-    dividendAmount?: number | null; // เงินปันผลรับสุทธิ (กรณี Guest)
-    dividendCreditFactor?: number; // อัตราเครดิตภาษี เช่น 0.25 (20/80)
+    includeDividendCredit: boolean; //เพิ่มเพื่อเลือกว่าจะรวมปันผลหรือไม่
+    dividendAmount: number | null; // เงินปันผลรับสุทธิ (กรณี Guest)
+    dividendCreditFactor: number; // อัตราเครดิตภาษี เช่น 0.25 (20/80)
 }
 
 
@@ -92,7 +92,7 @@ export interface TaxBreakdown {
 }
 
 // 3. ส่วนผลลัพธ์หลัก (Top-level Response)
-export interface TaxResult {
+export interface TaxResponse {
     hasDividend: boolean;
     bestChoice: 'WITH_CREDIT' | 'FINAL_TAX' | 'NONE';
     savings: number;

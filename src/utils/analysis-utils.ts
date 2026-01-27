@@ -1,12 +1,4 @@
-export interface TechnicalData {
-  Date: string;
-  Close: number;
-  RSI: number;
-  MACD: number;
-  Signal: number;
-  Hist: number;
-  Momentum: string;
-}
+import { TechnicalData } from "@/types/technical";
 
 export function getTechnicalVerdict(data: TechnicalData[]) {
   if (!data || data.length < 2) {

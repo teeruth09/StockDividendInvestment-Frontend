@@ -7,20 +7,9 @@ import {
   Card,
   CardContent,
   Typography,
-  TextField,
   Button,
-  Table,
-  TableHead,
-  TableBody,
-  TableRow,
-  TableCell,
   Collapse,
-  Paper,
-  FormControlLabel,
-  Switch,
   CircularProgress,
-  Divider,
-  TableContainer,
   Avatar,
   ToggleButton,
   ToggleButtonGroup,
@@ -29,7 +18,7 @@ import {
 import CalculateIcon from "@mui/icons-material/Calculate";
 import CreateIcon from '@mui/icons-material/Create';
 import { useAuth } from "../contexts/AuthContext";
-import { CalculateTax, TaxBreakdown, TaxResult } from "@/types/tax";
+import { CalculateTax, TaxCalculationDetail, TaxResponse } from "@/types/tax";
 import { calculateTaxApi, calculateTaxGuestApi, getTaxInfoApi } from "@/lib/api/tax";
 import NumericInput from "@/components/NumericInput";
 import { DetailedInfo } from "@/components/tax/TaxComparisonView";
@@ -42,10 +31,11 @@ const formatCurrency = (n: number | undefined | null) => {
 export default function TaxCalculatorPage(): JSX.Element {
   const { token } = useAuth();    
   
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [taxYear, setTaxYear] = useState<number>(2025);
 
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<TaxResult | null>(null); // รับข้อมูลจาก Backend
+  const [result, setResult] = useState<TaxResponse | null>(null); // รับข้อมูลจาก Backend
   const [resultOpen, setResultOpen] = useState(false);
 
   const [isEditMode, setIsEditMode] = useState(false);
@@ -96,8 +86,15 @@ export default function TaxCalculatorPage(): JSX.Element {
     loadData();
   }, [token,taxYear]);
 
-  const handleInputChange = (key: keyof CalculateTax) => (v: string | number | boolean) => {
-    setFormData(prev => ({ ...prev, [key]: v }));
+  // const handleInputChange = (key: keyof CalculateTax) => (v: string | number | boolean) => {
+  //   setFormData(prev => ({ ...prev, [key]: v }));
+  // };
+
+  const handleNumberChange =(key: keyof CalculateTax) => (value: number | null) => {
+    setFormData(prev => ({
+      ...prev,
+      [key]: value,
+    }));
   };
 
   // 3. ฟังก์ชันเรียก API คำนวณ
@@ -132,11 +129,9 @@ export default function TaxCalculatorPage(): JSX.Element {
     }
   };
 
-  const getRateColor = (currentRate: number, comparisonRate: number) => {
-    if (currentRate < comparisonRate) return "#2e7d32"; // สีเขียว (ดีกว่า)
-    if (currentRate > comparisonRate) return "#d32f2f"; // สีแดง (แย่กว่า)
-    return "text.secondary"; // สีปกติ (เท่ากัน)
-  };
+  const currentDetail = result?.hasDividend 
+  ? result.result[viewMode] 
+  : result?.result.standard;
 
   return (
     <Box sx={{ p: { xs: 2, md: 4 } }}>
@@ -170,16 +165,12 @@ export default function TaxCalculatorPage(): JSX.Element {
             <Grid size={{ xs: 12, sm: 6 }}>
               <NumericInput
                 label="เงินเดือน/รายได้อื่น"
-                value={formData.salary ?? 0}
-                onValueChange={(value) =>
-                  handleInputChange("salary")(value === '' ? 0 : Number(value))
-                }
+                value={formData.salary}
+                onValueChange={handleNumberChange("salary")}
                 textFieldProps={{
                   fullWidth: true,
-                  // ถ้ามี token ต้องกด Edit ก่อนถึงจะแก้ได้ แต่ถ้าเป็น Guest แก้ได้ตลอด
                   disabled: !!token && !isEditMode, 
-                  //variant: (!!token && !isEditMode) ? "filled" : "outlined",
-                  helperText: (!!token && !isEditMode)
+                  helperText: (!!token && !isEditMode) ? "กด Edit เพื่อแก้ไขข้อมูล": "",
                 }}
               />
             </Grid>
@@ -187,9 +178,7 @@ export default function TaxCalculatorPage(): JSX.Element {
               <NumericInput
                 label="โบนัส"
                 value={formData.bonus ?? 0}
-                onValueChange={(value) =>
-                  handleInputChange("bonus")(value === '' ? 0 : Number(value))
-                }
+                onValueChange={handleNumberChange("bonus")}
                 textFieldProps={{
                   fullWidth: true,
                   disabled: !!token && !isEditMode, 
@@ -201,9 +190,7 @@ export default function TaxCalculatorPage(): JSX.Element {
               <NumericInput
                 label="เงินปันผลรวม (ก่อนหักภาษี 10%)"
                 value={formData.dividendAmount ?? 0}
-                onValueChange={(value) =>
-                  handleInputChange("dividendAmount")(value === '' ? 0 : Number(value))
-                }
+                onValueChange={handleNumberChange("dividendAmount")}
                 textFieldProps={{
                   fullWidth: true,
                   disabled: !!token && !isEditMode, 
@@ -215,9 +202,7 @@ export default function TaxCalculatorPage(): JSX.Element {
                <NumericInput
                 label="รายได้อื่น ๆ"
                 value={formData.otherIncome ?? 0}
-                onValueChange={(value) =>
-                  handleInputChange("otherIncome")(value === '' ? 0 : Number(value))
-                }
+                onValueChange={handleNumberChange("otherIncome")}
                 textFieldProps={{
                   fullWidth: true,
                   disabled: !!token && !isEditMode, 
@@ -256,9 +241,7 @@ export default function TaxCalculatorPage(): JSX.Element {
               <NumericInput
                 label="ลดหย่อนส่วนตัว"
                 value={formData.personalDeduction ?? 0}
-                onValueChange={(value) =>
-                  handleInputChange("personalDeduction")(value === '' ? 0 : Number(value))
-                }
+                onValueChange={handleNumberChange("personalDeduction")}
                 textFieldProps={{
                   fullWidth: true,
                   disabled: !!token && !isEditMode, 
@@ -269,10 +252,8 @@ export default function TaxCalculatorPage(): JSX.Element {
             <Grid size={{ xs: 12, sm: 6 }}>
               <NumericInput
                 label="คู่สมรส"
-                value={formData.spouseDeduction ?? 0}
-                onValueChange={(value) =>
-                  handleInputChange("spouseDeduction")(value === '' ? 0 : Number(value))
-                }
+                value={formData.spouseDeduction ?? 0}                
+                onValueChange={handleNumberChange("spouseDeduction")}
                 textFieldProps={{
                   fullWidth: true,
                   disabled: !!token && !isEditMode, 
@@ -284,9 +265,7 @@ export default function TaxCalculatorPage(): JSX.Element {
               <NumericInput
                 label="บุตร"
                 value={formData.childDeduction ?? 0}
-                onValueChange={(value) =>
-                  handleInputChange("childDeduction")(value === '' ? 0 : Number(value))
-                }
+                onValueChange={handleNumberChange("childDeduction")}
                 textFieldProps={{
                   fullWidth: true,
                   disabled: !!token && !isEditMode, 
@@ -298,9 +277,7 @@ export default function TaxCalculatorPage(): JSX.Element {
               <NumericInput
                 label="พ่อแม่"
                 value={formData.parentDeduction ?? 0}
-                onValueChange={(value) =>
-                  handleInputChange("parentDeduction")(value === '' ? 0 : Number(value))
-                }
+                onValueChange={handleNumberChange("parentDeduction")}
                 textFieldProps={{
                   fullWidth: true,
                   disabled: !!token && !isEditMode, 
@@ -329,9 +306,7 @@ export default function TaxCalculatorPage(): JSX.Element {
               <NumericInput
                 label="ประกันสังคม (สูงสุด 9,000)"
                 value={formData.socialSecurity ?? 0}
-                onValueChange={(value) =>
-                  handleInputChange("socialSecurity")(value === '' ? 0 : Number(value))
-                }
+                onValueChange={handleNumberChange("socialSecurity")}
                 textFieldProps={{
                   fullWidth: true,
                   disabled: !!token && !isEditMode, 
@@ -343,9 +318,7 @@ export default function TaxCalculatorPage(): JSX.Element {
               <NumericInput
                 label="เบี้ยประกันชีวิต"
                 value={formData.lifeInsurance ?? 0}
-                onValueChange={(value) =>
-                  handleInputChange("lifeInsurance")(value === '' ? 0 : Number(value))
-                }
+                onValueChange={handleNumberChange("lifeInsurance")}
                 textFieldProps={{
                   fullWidth: true,
                   disabled: !!token && !isEditMode, 
@@ -357,9 +330,7 @@ export default function TaxCalculatorPage(): JSX.Element {
               <NumericInput
                 label="เบี้ยประกันสุขภาพ"
                 value={formData.healthInsurance ?? 0}
-                onValueChange={(value) =>
-                  handleInputChange("healthInsurance")(value === '' ? 0 : Number(value))
-                }
+                onValueChange={handleNumberChange("healthInsurance")}
                 textFieldProps={{
                   fullWidth: true,
                   disabled: !!token && !isEditMode, 
@@ -371,9 +342,7 @@ export default function TaxCalculatorPage(): JSX.Element {
               <NumericInput
                 label="เบี้ยประกันสุขภาพบิดามารดา"
                 value={formData.parentHealthInsurance ?? 0}
-                onValueChange={(value) =>
-                  handleInputChange("parentHealthInsurance")(value === '' ? 0 : Number(value))
-                }
+                onValueChange={handleNumberChange("parentHealthInsurance")}
                 textFieldProps={{
                   fullWidth: true,
                   disabled: !!token && !isEditMode, 
@@ -385,9 +354,7 @@ export default function TaxCalculatorPage(): JSX.Element {
               <NumericInput
                 label="กองทุนสำรองเลี้ยงชีพ (PVD)"
                 value={formData.pvd ?? 0}
-                onValueChange={(value) =>
-                  handleInputChange("pvd")(value === '' ? 0 : Number(value))
-                }
+                onValueChange={handleNumberChange("pvd")}
                 textFieldProps={{
                   fullWidth: true,
                   disabled: !!token && !isEditMode, 
@@ -399,9 +366,7 @@ export default function TaxCalculatorPage(): JSX.Element {
               <NumericInput
                 label="กองทุน RMF"
                 value={formData.rmf ?? 0}
-                onValueChange={(value) =>
-                  handleInputChange("rmf")(value === '' ? 0 : Number(value))
-                }
+                onValueChange={handleNumberChange("rmf")}
                 textFieldProps={{
                   fullWidth: true,
                   disabled: !!token && !isEditMode, 
@@ -413,9 +378,7 @@ export default function TaxCalculatorPage(): JSX.Element {
               <NumericInput
                 label="กองทุน SSF"
                 value={formData.ssf ?? 0}
-                onValueChange={(value) =>
-                  handleInputChange("ssf")(value === '' ? 0 : Number(value))
-                }
+                onValueChange={handleNumberChange("ssf")}
                 textFieldProps={{
                   fullWidth: true,
                   disabled: !!token && !isEditMode, 
@@ -427,9 +390,7 @@ export default function TaxCalculatorPage(): JSX.Element {
               <NumericInput
                 label="กองทุน Thai ESG"
                 value={formData.thaiEsg ?? 0}
-                onValueChange={(value) =>
-                  handleInputChange("thaiEsg")(value === '' ? 0 : Number(value))
-                }
+                onValueChange={handleNumberChange("thaiEsg")}
                 textFieldProps={{
                   fullWidth: true,
                   disabled: !!token && !isEditMode, 
@@ -458,9 +419,7 @@ export default function TaxCalculatorPage(): JSX.Element {
               <NumericInput
                 label="ดอกเบี้ยบ้าน"
                 value={formData.homeLoanInterest ?? 0}
-                onValueChange={(value) =>
-                  handleInputChange("homeLoanInterest")(value === '' ? 0 : Number(value))
-                }
+                onValueChange={handleNumberChange("homeLoanInterest")}
                 textFieldProps={{
                   fullWidth: true,
                   disabled: !!token && !isEditMode, 
@@ -472,9 +431,7 @@ export default function TaxCalculatorPage(): JSX.Element {
               <NumericInput
                 label="บริจาคทั่วไป"
                 value={formData.donationGeneral ?? 0}
-                onValueChange={(value) =>
-                  handleInputChange("donationGeneral")(value === '' ? 0 : Number(value))
-                }
+                onValueChange={handleNumberChange("donationGeneral")}
                 textFieldProps={{
                   fullWidth: true,
                   disabled: !!token && !isEditMode, 
@@ -486,9 +443,7 @@ export default function TaxCalculatorPage(): JSX.Element {
               <NumericInput
                 label="บริจาคเพื่อการศึกษา"
                 value={formData.donationEducation ?? 0}
-                onValueChange={(value) =>
-                  handleInputChange("donationEducation")(value === '' ? 0 : Number(value))
-                }
+                onValueChange={handleNumberChange("donationEducation")}
                 textFieldProps={{
                   fullWidth: true,
                   disabled: !!token && !isEditMode, 
@@ -551,16 +506,20 @@ export default function TaxCalculatorPage(): JSX.Element {
                 </Box>
 
                 {/* เรียกใช้ Component ย่อยที่เราแยกไว้ */}
-                <DetailedInfo result={result.hasDividend ? result.result[viewMode] : result.result.standard} />
+                <DetailedInfo 
+                  result={(result?.hasDividend ? result.result[viewMode] : result?.result.standard) as TaxCalculationDetail}
+                />
                 
                 {/* ส่วนแสดง Effective Rate (เฉพาะฝั่ง) */}
-                <Box mt={3} p={2} bgcolor="#f8f9fa" borderRadius={1}>
-                  <Typography variant="body2">
-                    อัตราภาษีที่แท้จริง (Effective Tax Rate): <b>
-                      {(result.hasDividend ? result.result[viewMode].effectiveRate : result.result.standard.effectiveRate).toFixed(2)}%
-                    </b>
-                  </Typography>
-                </Box>
+                {currentDetail && (
+                  <Box mt={3} p={2} bgcolor="#f8f9fa" borderRadius={1}>
+                    <Typography variant="body2">
+                      อัตราภาษีที่แท้จริง (Effective Tax Rate): <b>
+                        {currentDetail.effectiveRate.toFixed(2)}%
+                      </b>
+                    </Typography>
+                  </Box>
+                )}
               </CardContent>
             </Card>
           </Box>
