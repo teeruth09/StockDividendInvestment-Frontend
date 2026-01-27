@@ -92,7 +92,7 @@ export interface TaxBreakdown {
 }
 
 // 3. ส่วนผลลัพธ์หลัก (Top-level Response)
-export interface TaxResult {
+export interface TaxResponse {
     hasDividend: boolean;
     bestChoice: 'WITH_CREDIT' | 'FINAL_TAX' | 'NONE';
     savings: number;

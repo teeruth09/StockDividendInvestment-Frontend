@@ -57,6 +57,9 @@ import { formatDate } from '@/lib/helpers/format';
 import { InfoOutlined, Warning } from '@mui/icons-material';
 import GgmAnalysis from '@/components/analysis/GgmAnalysis';
 import { getValuationGgmApi } from '@/lib/api/ggm';
+import { AnalysisResponse } from '@/types/analysis';
+import { GgmApiResponse } from '@/types/ggm';
+import { TechinicalAnalysisApiResponse } from '@/types/technical';
 
 
 ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, ChartTooltip, Legend);
@@ -265,11 +268,11 @@ export default function StockDetailPage() {
     }, [latestPrice]);
 
     //ก้อนวิเคราะห์ (แนะนำ: โหลดเฉพาะเมื่อ User ต้องการดู)
-    const [analysisData, setAnalysisData] = useState(null);
+    const [analysisData, setAnalysisData] = useState<AnalysisResponse | null>(null);
     const [isAnalysisLoading, setIsAnalysisLoading] = useState(false);
-    const [ggmData, setGgmData] = useState(null);
+    const [ggmData, setGgmData] = useState<GgmApiResponse | null>(null);
     const [isGgmLoading, setIsGgmLoading] = useState(false);
-    const [technicalData, setTechnicalData] = useState(null);
+    const [technicalData, setTechnicalData] = useState<TechinicalAnalysisApiResponse | null>(null);
     const [, setIsTechnicalLoading] = useState(false);
 
     useEffect(() => {

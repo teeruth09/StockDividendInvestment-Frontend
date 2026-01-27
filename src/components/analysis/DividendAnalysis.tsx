@@ -15,46 +15,15 @@ import {
 } from "@mui/material";
 import FormattedNumberDisplay from "../FormattedNumberDisplay";
 import { getChangeColor, getCompareColor } from "@/lib/helpers/colorHelper";
-
-// แปลง Interface ให้เป็นตามรูปแบบข้อมูลที่ได้จาก API (และรองรับการ Map)
-interface DividendAnalysisData{
-  symbol: string;
-  year: number;
-  exDate: string;
-  dps: number;
-  pCum: number;
-  pEx: number;
-  dyPercent: number;
-  pdPercent: number;
-  tdtsScore: number;
-  temaPrice: number;
-  retBfTema: number;
-  retAfTema: number;
-}
+import { AnalysisDataResponse } from "@/types/analysis";
 
 interface DividendAnalysisProps {
-  data: any[]; // รับดิบๆ มาจาก API แล้วเรามา Map ข้างใน
+  data: AnalysisDataResponse[];
   isLoading?: boolean;
 }
 
 export default function DividendAnalysis({ data, isLoading }: DividendAnalysisProps) {
   
-  // 1. Mapping ข้อมูลจาก Snake_Case/PascalCase เป็น camelCase ตามที่คุณต้องการ
-  const mappedData: DividendAnalysisData[] = data.map((item) => ({
-    symbol: item.symbol,
-    year: item.year,
-    exDate: item.exDate,
-    dps: item.dps,
-    pCum: item.pCum,
-    pEx: item.pEx,
-    dyPercent: item.dyPercent,
-    pdPercent: item.pdPercent,
-    tdtsScore: item.tdtsScore,
-    temaPrice: item.temaPrice,
-    retBfTema: item.retBfTema,
-    retAfTema: item.retAfTema,
-  }));
-
   return (
     <Box>
       <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold', color: 'primary.main', mt: 2 }}>
@@ -83,10 +52,10 @@ export default function DividendAnalysis({ data, isLoading }: DividendAnalysisPr
           <TableBody>
             {isLoading ? (
                <TableRow><TableCell colSpan={6} align="center">กำลังโหลดบทวิเคราะห์...</TableCell></TableRow>
-            ) : mappedData.length === 0 ? (
+            ) : data.length === 0 ? (
                <TableRow><TableCell colSpan={6} align="center">ไม่พบข้อมูลบทวิเคราะห์</TableCell></TableRow>
             ) : (
-              mappedData.map((row, index) => (
+              data.map((row, index) => (
                 <TableRow key={index} hover>
                   {/* วัน XD */}
                   <TableCell>

@@ -18,7 +18,7 @@ import {
 import CalculateIcon from "@mui/icons-material/Calculate";
 import CreateIcon from '@mui/icons-material/Create';
 import { useAuth } from "../contexts/AuthContext";
-import { CalculateTax, TaxResult } from "@/types/tax";
+import { CalculateTax, TaxCalculationDetail, TaxResponse } from "@/types/tax";
 import { calculateTaxApi, calculateTaxGuestApi, getTaxInfoApi } from "@/lib/api/tax";
 import NumericInput from "@/components/NumericInput";
 import { DetailedInfo } from "@/components/tax/TaxComparisonView";
@@ -35,7 +35,7 @@ export default function TaxCalculatorPage(): JSX.Element {
   const [taxYear, setTaxYear] = useState<number>(2025);
 
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<TaxResult | null>(null); // รับข้อมูลจาก Backend
+  const [result, setResult] = useState<TaxResponse | null>(null); // รับข้อมูลจาก Backend
   const [resultOpen, setResultOpen] = useState(false);
 
   const [isEditMode, setIsEditMode] = useState(false);
@@ -122,6 +122,9 @@ export default function TaxCalculatorPage(): JSX.Element {
     }
   };
 
+  const currentDetail = result?.hasDividend 
+  ? result.result[viewMode] 
+  : result?.result.standard;
 
   return (
     <Box sx={{ p: { xs: 2, md: 4 } }}>
@@ -536,16 +539,20 @@ export default function TaxCalculatorPage(): JSX.Element {
                 </Box>
 
                 {/* เรียกใช้ Component ย่อยที่เราแยกไว้ */}
-                <DetailedInfo result={result.hasDividend ? result.result[viewMode] : result.result.standard} />
+                <DetailedInfo 
+                  result={(result?.hasDividend ? result.result[viewMode] : result?.result.standard) as TaxCalculationDetail}
+                />
                 
                 {/* ส่วนแสดง Effective Rate (เฉพาะฝั่ง) */}
-                <Box mt={3} p={2} bgcolor="#f8f9fa" borderRadius={1}>
-                  <Typography variant="body2">
-                    อัตราภาษีที่แท้จริง (Effective Tax Rate): <b>
-                      {(result.hasDividend ? result.result[viewMode].effectiveRate : result.result.standard.effectiveRate).toFixed(2)}%
-                    </b>
-                  </Typography>
-                </Box>
+                {currentDetail && (
+                  <Box mt={3} p={2} bgcolor="#f8f9fa" borderRadius={1}>
+                    <Typography variant="body2">
+                      อัตราภาษีที่แท้จริง (Effective Tax Rate): <b>
+                        {currentDetail.effectiveRate.toFixed(2)}%
+                      </b>
+                    </Typography>
+                  </Box>
+                )}
               </CardContent>
             </Card>
           </Box>

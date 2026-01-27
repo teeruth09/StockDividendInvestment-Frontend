@@ -5,14 +5,15 @@ import {
   TableContainer, TableHead, TableRow, Chip, Stack 
 } from '@mui/material';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
-import { TechnicalData, getTechnicalVerdict } from '@/utils/analysis-utils';
+import { getTechnicalVerdict } from '@/utils/analysis-utils';
+import { TechnicalData } from '@/types/technical';
 
-interface Props {
+interface TechnicalAnalysisProps {
   data: TechnicalData[];
   symbol: string;
 }
 
-export default function TechnicalAnalysisView({ data, symbol }: Props) {
+export default function TechnicalAnalysisView({ data, symbol }: TechnicalAnalysisProps) {
   // กรองเอาเฉพาะ 10-15 วันล่าสุดมาโชว์ในตารางเพื่อความกระชับ
   const displayData = [...data].reverse().slice(0, 15);
   const verdict = getTechnicalVerdict(data);

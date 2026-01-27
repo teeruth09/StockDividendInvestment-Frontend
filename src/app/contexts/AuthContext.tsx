@@ -1,6 +1,6 @@
 // contexts/AuthContext.tsx
 'use client';
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { LoginDto, RegisterDto, User } from '@/types/user';
 import { loginApi, registerApi } from '@/lib/api/auth';
 import { jwtDecode } from 'jwt-decode';
@@ -32,34 +32,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter()
-
-  // เช็ค token เมื่อ app เริ่มต้น
-  useEffect(() => {
-    const initAuth = () => {
-      try {
-        const storedToken = localStorage.getItem('x-access-token');
-        if (storedToken) {
-            const decoded = jwtDecode<JwtPayload>(storedToken);
-            const now = Date.now() / 1000;
-            if (decoded.exp < now) {
-            console.warn('Token expired');
-            logout(); // clear expired token
-            } else {
-            setToken(storedToken);
-            const userInfo = decodeToken(storedToken);
-            if (userInfo) setUser(userInfo);
-            }
-        }
-      } catch (err) {
-        console.error('Failed to initialize auth:', err);
-        logout(); // clear invalid token
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    initAuth();
-  }, []);
 
   const login = async (credentials: LoginDto) => {
     setIsLoading(true);
@@ -110,8 +82,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const logout = () => {
-    try {
+  const logout = useCallback(() => {
+      try {
       localStorage.removeItem('x-access-token');
       setToken(null);
       setUser(null);
@@ -120,23 +92,51 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (err) {
       console.error('Logout error:', err);
     }
-  };
+  }, [router]);
 
   const decodeToken = (token: string): User | null => {
-  try {
-    const decoded = jwtDecode<JwtPayload>(token);
-    return {
-        username: decoded.username,
-        user_id: decoded.sub,
+    try {
+      const decoded = jwtDecode<JwtPayload>(token);
+      return {
+          username: decoded.username,
+          user_id: decoded.sub,
+      }
+    } catch {
+      return null;
     }
-  } catch {
-    return null;
-  }
-};
+  };
 
   const clearError = () => {
     setError(null);
   };
+
+  // เช็ค token เมื่อ app เริ่มต้น
+  useEffect(() => {
+    const initAuth = () => {
+      try {
+        const storedToken = localStorage.getItem('x-access-token');
+        if (storedToken) {
+            const decoded = jwtDecode<JwtPayload>(storedToken);
+            const now = Date.now() / 1000;
+            if (decoded.exp < now) {
+            console.warn('Token expired');
+            logout(); // clear expired token
+            } else {
+            setToken(storedToken);
+            const userInfo = decodeToken(storedToken);
+            if (userInfo) setUser(userInfo);
+            }
+        }
+      } catch (err) {
+        console.error('Failed to initialize auth:', err);
+        logout(); // clear invalid token
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initAuth();
+  }, [logout]);
 
   return (
     <AuthContext.Provider value={{
