@@ -64,32 +64,6 @@ const InvestmentProfileUI: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [backupData, setBackupData] = useState<UserTaxInfo | null>(null);
 
-  const numberFields: (keyof UserTaxInfo)[] = [
-    'salary',
-    'bonus',
-    'otherIncome',
-    'personalDeduction',
-    'spouseDeduction',
-    'childDeduction',
-    'parentDeduction',
-    'disabledDeduction',
-    'socialSecurity',
-    'lifeInsurance',
-    'healthInsurance',
-    'parentDeduction',
-    'disabledDeduction',
-    'socialSecurity',
-    'lifeInsurance',
-    'healthInsurance',
-    'parentHealthInsurance',
-    'pvdDeduction',
-    'ssfInvestment',
-    'rmfInvestment',
-    'thaiesgInvestment',
-    'homeLoanInterest',
-    'donationGeneral',
-    'donationEducation',
-  ];
 
   const fieldLabels: Record<string, string> = {
     salary: 'เงินเดือน/ค่าจ้าง',
@@ -157,21 +131,11 @@ const InvestmentProfileUI: React.FC = () => {
       }
     };
     fetchData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, token, currentYear]);
 
   const data = allYearsData[currentYear];
 
-  const handleInputChange = (field: keyof UserTaxInfo) => (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (!data) return;
-    let value: string | number = event.target.value;
-    if (numberFields.includes(field)) {
-      value = value === '' ? '' : Number(value);
-    }
-    setAllYearsData((prev) => ({
-      ...prev,
-      [currentYear]: { ...prev[currentYear], [field]: value },
-    }));
-  };
 
   const handleNumericChange = (field: keyof UserTaxInfo) => (values: NumberFormatValues) => {
     setAllYearsData((prev) => ({

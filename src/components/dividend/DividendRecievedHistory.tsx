@@ -4,9 +4,8 @@ import React, { useEffect, useState, useMemo } from 'react';
 import {
   Box, Typography, Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, Paper, TableSortLabel, TextField,
-  CircularProgress, Button, Chip
+  CircularProgress, Chip
 } from '@mui/material';
-import Link from 'next/link';
 import { useAuth } from '@/app/contexts/AuthContext';
 import FormattedNumberDisplay from '../FormattedNumberDisplay';
 import { DividendReceived } from '@/types/dividend';
@@ -19,7 +18,7 @@ export default function DividendReceivedHistory() {
   const { token } = useAuth();
   const [data, setData] = useState<DividendReceived[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [, setError] = useState<string | null>(null);
 
   const [search, setSearch] = useState("");
   const [order, setOrder] = useState<Order>('desc');
@@ -45,6 +44,7 @@ export default function DividendReceivedHistory() {
     }
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { fetchData(); }, [token]);
 
   // การจัดการ Sorting

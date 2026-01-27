@@ -65,7 +65,7 @@ export default function StockTable() {
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
 
-  const [filterOptions, setFilterOptions] = React.useState<{sectors: string[], clusters: string[]}>({
+  const [, setFilterOptions] = React.useState<{sectors: string[], clusters: string[]}>({
     sectors: [],
     clusters: []
   });
@@ -104,6 +104,7 @@ export default function StockTable() {
 
   useEffect(() => {
     fetchData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, rowsPerPage, orderBy, order]);
 
   // Handlers สำหรับ Table Events

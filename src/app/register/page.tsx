@@ -8,7 +8,6 @@ import {
   Button,
   Typography,
   Link,
-  Divider,
   IconButton,
   Checkbox,
   FormControlLabel,

@@ -1,14 +1,8 @@
 import { TaxBreakdown } from '@/types/tax';
-import { CheckCircleOutline, TrendingDown, InfoOutlined } from '@mui/icons-material';
-import { Alert, Box, Card, CardContent, Chip, Divider, Grid, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
+import { CheckCircleOutline, InfoOutlined } from '@mui/icons-material';
+import { Alert, Box, Card, CardContent, Chip, Divider, Grid, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from '@mui/material';
 import { useState } from 'react';
 
-// ฟังก์ชัน Helper สำหรับสี % ภาษี
-const getRateColor = (current: number, comparison: number) => {
-  if (current < comparison) return "#2e7d32"; 
-  if (current > comparison) return "#d32f2f";
-  return "text.secondary";
-};
 
 const formatCurrency = (n: number | undefined | null) => {
   if (n === undefined || n === null) return "0";

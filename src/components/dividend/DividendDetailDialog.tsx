@@ -15,7 +15,6 @@ interface Props {
 export const DividendDetailDialog = ({ open, onClose, event }: Props) => {
     if (!event) return null;
 
-    const rowStyle = { py: 1, display: 'flex', justifyContent: 'space-between' };
 
     return (
         <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>

@@ -7,20 +7,9 @@ import {
   Card,
   CardContent,
   Typography,
-  TextField,
   Button,
-  Table,
-  TableHead,
-  TableBody,
-  TableRow,
-  TableCell,
   Collapse,
-  Paper,
-  FormControlLabel,
-  Switch,
   CircularProgress,
-  Divider,
-  TableContainer,
   Avatar,
   ToggleButton,
   ToggleButtonGroup,
@@ -29,7 +18,7 @@ import {
 import CalculateIcon from "@mui/icons-material/Calculate";
 import CreateIcon from '@mui/icons-material/Create';
 import { useAuth } from "../contexts/AuthContext";
-import { CalculateTax, TaxBreakdown, TaxResult } from "@/types/tax";
+import { CalculateTax, TaxResult } from "@/types/tax";
 import { calculateTaxApi, calculateTaxGuestApi, getTaxInfoApi } from "@/lib/api/tax";
 import NumericInput from "@/components/NumericInput";
 import { DetailedInfo } from "@/components/tax/TaxComparisonView";
@@ -42,6 +31,7 @@ const formatCurrency = (n: number | undefined | null) => {
 export default function TaxCalculatorPage(): JSX.Element {
   const { token } = useAuth();    
   
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [taxYear, setTaxYear] = useState<number>(2025);
 
   const [loading, setLoading] = useState(false);
@@ -132,11 +122,6 @@ export default function TaxCalculatorPage(): JSX.Element {
     }
   };
 
-  const getRateColor = (currentRate: number, comparisonRate: number) => {
-    if (currentRate < comparisonRate) return "#2e7d32"; // สีเขียว (ดีกว่า)
-    if (currentRate > comparisonRate) return "#d32f2f"; // สีแดง (แย่กว่า)
-    return "text.secondary"; // สีปกติ (เท่ากัน)
-  };
 
   return (
     <Box sx={{ p: { xs: 2, md: 4 } }}>

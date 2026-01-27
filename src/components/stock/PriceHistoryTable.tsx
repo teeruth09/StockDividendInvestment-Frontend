@@ -63,6 +63,7 @@ export default function PriceHistoryTable({ stockSymbol }: PriceHistoryTableProp
 
     useEffect(() => {
         fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [stockSymbol]); 
 
     const handleSearch = () => {

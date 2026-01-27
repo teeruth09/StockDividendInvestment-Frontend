@@ -36,9 +36,7 @@ const DetailItem = ({ label, value }: { label: string, value: React.ReactNode })
 );
 
 export default function StockInfoTab({ 
-    stockSymbol, 
-    latestHistoricalPrice, // 💡 ใช้ตัวนี้แทน latestPrice
-    currentSummary, 
+    latestHistoricalPrice,
     latestDividend //ใช้ตัวนี้แทน summary
 }: StockInfoTabProps) {
 

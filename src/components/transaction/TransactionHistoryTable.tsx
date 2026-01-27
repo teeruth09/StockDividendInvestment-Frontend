@@ -93,6 +93,7 @@ export default function TransactionHistoryTable() {
 
   useEffect(() => {
     fetchData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId, transactionType]); // โหลดใหม่เมื่อ userId หรือ filter เปลี่ยน
 
 

@@ -98,6 +98,7 @@ export default function PortfolioPage() {
   useEffect(() => {
     if (!token) return; // ป้องกันการยิง API เมื่อยังไม่มี Token
     fetchHistory(timeframe);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeframe, token]);
 
   if (loading) {
