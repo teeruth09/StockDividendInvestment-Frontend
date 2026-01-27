@@ -167,7 +167,6 @@ export default function TransactionHistoryTable() {
                     direction={orderBy === headCell ? order : 'asc'}
                     onClick={() => handleRequestSort(headCell)}
                   >
-                    {/* 💡 แสดง Label ภาษาไทย */}
                     {headCell === 'createdAt' && 'วันที่บันทึก'}
                     {headCell === 'stockSymbol' && 'หลักทรัพย์'}
                     {headCell === 'transactionType' && 'ประเภท'}

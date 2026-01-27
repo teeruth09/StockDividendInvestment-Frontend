@@ -371,8 +371,7 @@ export default function StockDetailPage() {
     if (error) {
         return <Alert severity="error" sx={{ m: 3 }}>{error}</Alert>;
     }
-    
-
+   
     return (
         <Box sx={{ p: 3 }}>
         <Grid container spacing={2}>
@@ -632,12 +631,14 @@ export default function StockDetailPage() {
                         <TextField fullWidth type="number" label="จำนวนหุ้น" value={tradeQty} onChange={(e) => setTradeQty(Number(e.target.value))} />
                         <NumericInput
                             label="ราคาต่อหุ้น (บาท)"
-                            value={tradePrice ?? latestPrice ?? ""} 
-                            onValueChange={(value) => setTradePrice(value === '' ? null : Number(value))}                             
+                            value={tradePrice ?? latestPrice ?? null}
+                            onValueChange={(value) =>
+                                setTradePrice(typeof value === 'number' ? value : null)
+                            }
                             textFieldProps={{ 
                                 fullWidth: true,
-                                disabled: true, //Disaple เพราะเป็นราคาปิดวันนั้นห้ามกำหนดเอง
-                                InputLabelProps: { shrink: true } 
+                                disabled: true,
+                                InputLabelProps: { shrink: true }
                             }}
                         />
                         <Box sx={{ mt: 2, display: "flex", flexDirection: "column", gap: 0.5, borderTop: '1px solid #eee', pt: 1 }}>
