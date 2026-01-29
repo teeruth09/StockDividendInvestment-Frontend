@@ -12,7 +12,7 @@ import Typography from '@mui/material/Typography';
 import Paper from '@mui/material/Paper';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Switch from '@mui/material/Switch';
-import { Avatar, Chip, CircularProgress, Stack } from '@mui/material';
+import { Alert, Avatar, Button, Chip, CircularProgress, Stack } from '@mui/material';
 import { TrendingUp } from '@mui/icons-material';
 import { getRecommendedStockApi } from '@/lib/api/recommendation';
 import { EnhancedTableHead } from "@/components/home/HeadTable";
@@ -70,6 +70,12 @@ export default function StockTable() {
     clusters: []
   });
 
+  const [errorStatus, setErrorStatus] = useState<{
+    type: 'error' | 'warning' | 'info' | 'success';
+    message: string;
+    isProcessing?: boolean;
+  } | null>(null);
+
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
@@ -95,8 +101,12 @@ export default function StockTable() {
         // เก็บค่า options เพื่อใช้ใน Dropdown
         setFilterOptions(response.options);
       }
-    } catch (error) {
-      console.error("Fetch Error:", error);
+    } catch (err) {
+      console.error(err);
+      setErrorStatus({
+        type: 'error',
+        message: err instanceof Error ? err.message : 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้'
+      });
     } finally {
       setLoading(false);
     }
@@ -207,6 +217,23 @@ export default function StockTable() {
         }}
         onClear={handleClear}
       />
+      {errorStatus && (
+        <Alert
+          variant="filled" 
+          severity={errorStatus.type}
+          sx={{ mb: 2, borderRadius: 2 }}
+          icon={errorStatus.isProcessing ? <CircularProgress size={20} color="inherit" /> : undefined}
+          action={
+            !errorStatus.isProcessing && (
+              <Button color="inherit" size="small" onClick={fetchData}>
+                RETRY
+              </Button>
+            )
+          }
+        >
+          {errorStatus.message}
+        </Alert>
+      )}
       <Paper sx={{ width: '100%', mb: 2, borderRadius: 2, overflow: 'hidden' }}>
         <TableContainer sx={{ position: 'relative', minHeight: 400 }}>
           {/* แสดง Loading ทับตารางเวลาโหลด */}

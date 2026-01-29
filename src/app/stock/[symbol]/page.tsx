@@ -273,7 +273,7 @@ export default function StockDetailPage() {
     const [ggmData, setGgmData] = useState<GgmApiResponse | null>(null);
     const [isGgmLoading, setIsGgmLoading] = useState(false);
     const [technicalData, setTechnicalData] = useState<TechinicalAnalysisApiResponse | null>(null);
-    const [, setIsTechnicalLoading] = useState(false);
+    const [isTechnicalLoading, setIsTechnicalLoading] = useState(false);
 
     useEffect(() => {
         setAnalysisData(null); 
@@ -295,7 +295,7 @@ export default function StockDetailPage() {
                 }
             }
             else if (activeTab === 'ggm' && !ggmData && symbol) {
-                setIsAnalysisLoading(true);
+                setIsGgmLoading(true);
                 try {
                     const res = await getValuationGgmApi(symbol);
                     setGgmData(res);
@@ -548,7 +548,7 @@ export default function StockDetailPage() {
                         {activeTab === 'technical' && (
                             <Box sx={{ minHeight: 300 }}>
                                 <Typography variant="subtitle1">วิเคราะห์กราฟทางการเทคนิค</Typography>
-                                {isAnalysisLoading ? (
+                                {isTechnicalLoading ? (
                                     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 5 }}>
                                         <CircularProgress />
                                         <Typography sx={{ mt: 2 }}>กำลังวิเคราะห์ข้อมูล...</Typography>
