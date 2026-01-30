@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import React from 'react';
 import { 
@@ -5,8 +6,30 @@ import {
   TableContainer, TableHead, TableRow, Chip, Stack 
 } from '@mui/material';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import { getTechnicalVerdict } from '@/utils/analysis-utils';
 import { TechnicalData } from '@/types/technical';
+
+// --- Chart.js Imports ---
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler,
+  ChartOptions
+} from 'chart.js';
+import { Chart } from 'react-chartjs-2';
+
+ChartJS.register(
+  CategoryScale, LinearScale, PointElement, LineElement, 
+  BarElement, Title, Tooltip, Legend, Filler
+);
 
 interface TechnicalAnalysisProps {
   data: TechnicalData[];
@@ -14,9 +37,82 @@ interface TechnicalAnalysisProps {
 }
 
 export default function TechnicalAnalysisView({ data, symbol }: TechnicalAnalysisProps) {
-  // กรองเอาเฉพาะ 10-15 วันล่าสุดมาโชว์ในตารางเพื่อความกระชับ
   const displayData = [...data].reverse().slice(0, 15);
   const verdict = getTechnicalVerdict(data);
+
+  // เตรียมข้อมูลสำหรับกราฟ (เรียงจากอดีตไปปัจจุบัน)
+  const chartDataSrc = [...data].sort((a, b) => new Date(a.Date).getTime() - new Date(b.Date).getTime());
+  const labels = chartDataSrc.map(d => new Date(d.Date).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' , year: '2-digit' }));
+
+  const chartData = {
+    labels,
+    datasets: [
+      {
+        type: 'line' as const,
+        label: 'ราคาปิด',
+        data: chartDataSrc.map(d => d.Close),
+        borderColor: '#2196f3',
+        backgroundColor: 'rgba(33, 150, 243, 0.1)',
+        fill: true,
+        yAxisID: 'yPrice',
+        tension: 0.4,
+        pointRadius: 0,
+      },
+      {
+        type: 'bar' as const,
+        label: 'MACD Hist',
+        data: chartDataSrc.map(d => d.Hist),
+        backgroundColor: chartDataSrc.map(d => d.Hist >= 0 ? 'rgba(38, 166, 154, 0.7)' : 'rgba(239, 83, 80, 0.7)'),
+        yAxisID: 'yMACD',
+        barPercentage: 0.6,
+      },
+      {
+        type: 'line' as const,
+        label: 'MACD Line',
+        data: chartDataSrc.map(d => d.MACD),
+        borderColor: '#fb8c00',
+        borderWidth: 1.5,
+        pointRadius: 0,
+        yAxisID: 'yMACD',
+      },
+      {
+        type: 'line' as const,
+        label: 'Signal Line',
+        data: chartDataSrc.map(d => d.Signal),
+        borderColor: '#9c27b0',
+        borderWidth: 1.5,
+        borderDash: [5, 5],
+        pointRadius: 0,
+        yAxisID: 'yMACD',
+      }
+    ],
+  };
+
+  const chartOptions: ChartOptions<'line' | 'bar'> = {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: 'index', intersect: false },
+    scales: {
+      yPrice: {
+        type: 'linear',
+        display: true,
+        position: 'left',
+        title: { display: true, text: 'ราคา (บาท)', font: { weight: 'bold' } },
+        grid: { drawOnChartArea: true }
+      },
+      yMACD: {
+        type: 'linear',
+        display: true,
+        position: 'right',
+        title: { display: true, text: 'MACD / Hist', font: { weight: 'bold' } },
+        grid: { drawOnChartArea: false }, // ไม่ให้เส้นกริตทับซ้อนกัน
+      },
+    },
+    plugins: {
+      legend: { position: 'top', labels: { boxWidth: 12, usePointStyle: true } },
+      tooltip: { padding: 10 }
+    }
+  };
 
   return (
     <Box sx={{ animation: 'fadeIn 0.5s ease-in' }}>
@@ -42,7 +138,7 @@ export default function TechnicalAnalysisView({ data, symbol }: TechnicalAnalysi
             </Typography>
           </Box>
           <Chip 
-            icon={<TrendingUpIcon />} 
+            icon={data[data.length-1]?.Momentum === 'Bullish' ? <TrendingUpIcon /> : <TrendingDownIcon />} 
             label={data[data.length-1]?.Momentum || 'N/A'} 
             color={data[data.length-1]?.Momentum === 'Bullish' ? 'success' : 'error'}
             variant="filled"
@@ -50,9 +146,17 @@ export default function TechnicalAnalysisView({ data, symbol }: TechnicalAnalysi
         </Stack>
       </Paper>
 
-      {/* 2. Technical Data Table */}
+      {/* 2. Chart Section (NEW) */}
       <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 'bold' }}>
-        ประวัติเครื่องมือทางเทคนิค (รายวัน)
+        กราฟราคาและเครื่องมือทางเทคนิค
+      </Typography>
+      <Paper variant="outlined" sx={{ p: 2, mb: 4, borderRadius: 2, height: 450 }}>
+        <Chart type='line' data={chartData as any} options={chartOptions as any} />
+      </Paper>
+
+      {/* 3. Technical Data Table */}
+      <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 'bold' }}>
+        รายละเอียดเครื่องมือทางเทคนิค (15 วันล่าสุด)
       </Typography>
       <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2 }}>
         <Table size="small" stickyHeader>
@@ -70,11 +174,7 @@ export default function TechnicalAnalysisView({ data, symbol }: TechnicalAnalysi
             {displayData.map((row, index) => (
               <TableRow key={index} hover>
                 <TableCell sx={{ fontWeight: 600 }}>
-                  {new Date(row.Date).toLocaleDateString("th-TH", {
-                      year: "numeric",
-                      month: "short",
-                      day: "numeric",
-                  })}
+                  {new Date(row.Date).toLocaleDateString("th-TH", { year: "numeric", month: "short", day: "numeric" })}
                 </TableCell>
                 <TableCell align="right" sx={{ fontWeight: 600 }}>{row.Close.toFixed(2)}</TableCell>
                 <TableCell align="right" sx={{ 
@@ -97,7 +197,7 @@ export default function TechnicalAnalysisView({ data, symbol }: TechnicalAnalysi
         </Table>
       </TableContainer>
 
-      {/* 3. หมายเหตุทางเทคนิค */}
+      {/* 4. หมายเหตุ... */}
       <Box sx={{ mt: 2, p: 2, bgcolor: '#f9f9f9', borderRadius: 1 }}>
         <Typography variant="body2" sx={{ fontWeight: 'bold', color: 'primary.main', display: 'block', mb: 0.5 }}>
           หมายเหตุ:
