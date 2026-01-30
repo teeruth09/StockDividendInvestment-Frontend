@@ -611,7 +611,7 @@ export default function StockDetailPage() {
 
                         <LocalizationProvider dateAdapter={AdapterDateFns}>
                         <DatePicker
-                            label="เลือกวันที่ดำเนินการ"
+                            label="เลือกวันเพื่อดำเนินการจำลอง"
                             value={tradeDate}
                             onChange={handleTradeDateChange}
                             // onChange={(newDate) => {

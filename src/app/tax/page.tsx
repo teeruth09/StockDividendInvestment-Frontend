@@ -32,7 +32,7 @@ export default function TaxCalculatorPage(): JSX.Element {
   const { token } = useAuth();    
   
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [taxYear, setTaxYear] = useState<number>(2025);
+  const [taxYear, setTaxYear] = useState<number>(2026);
 
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<TaxResponse | null>(null); // รับข้อมูลจาก Backend
@@ -44,7 +44,7 @@ export default function TaxCalculatorPage(): JSX.Element {
   
   // 1. ปรับ State ให้ตรงกับ DTO
   const [formData, setFormData] = useState<CalculateTax>({
-    year: 2025,
+    year: 2026,
     salary: 0,
     bonus: 0,
     otherIncome: 0,

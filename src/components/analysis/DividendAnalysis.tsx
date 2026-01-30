@@ -37,13 +37,13 @@ export default function DividendAnalysis({ data, isLoading }: DividendAnalysisPr
               <TableCell sx={{ bgcolor: '#f5f5f5' }}>วันที่ XD</TableCell>
               <TableCell align="right" sx={{ bgcolor: '#f5f5f5' }}>เงินปันผล (บาท/หุ้น)</TableCell>
               <TableCell align="right" sx={{ bgcolor: '#f5f5f5' }}>Yield (%)</TableCell>
-              <TableCell align="right" sx={{ bgcolor: '#f5f5f5' }}>ราคาก่อน XD (P_cum)</TableCell>
-              <TableCell align="right" sx={{ bgcolor: '#f5f5f5' }}>ราคาหลัง XD (P_ex)</TableCell>
+              <TableCell align="right" sx={{ bgcolor: '#f5f5f5' }}>ราคาก่อน XD</TableCell>
+              <TableCell align="right" sx={{ bgcolor: '#f5f5f5' }}>ราคาหลัง XD</TableCell>
               
               {/* โซน TEMA ใส่สีพื้นหลัง Header ต่างออกไปเล็กน้อย */}
               <TableCell align="right" sx={{ bgcolor: '#F0F4F8' }}>TEMA Price</TableCell>
-              <TableCell align="right" sx={{ bgcolor: '#F0F4F8' }}>Ret Before (%)</TableCell>
-              <TableCell align="right" sx={{ bgcolor: '#F0F4F8' }}>Ret After (%)</TableCell>
+              <TableCell align="right" sx={{ bgcolor: '#F0F4F8' }}>ผลตอบแทนก่อน XD (%)</TableCell>
+              <TableCell align="right" sx={{ bgcolor: '#F0F4F8' }}>ผลตอบแทนหลัง XD (%)</TableCell>
 
               <TableCell align="center" sx={{ bgcolor: '#f5f5f5' }}>Price Change (PD %)</TableCell>
               <TableCell align="right" sx={{ bgcolor: '#f5f5f5' }}>TDTS Score</TableCell>

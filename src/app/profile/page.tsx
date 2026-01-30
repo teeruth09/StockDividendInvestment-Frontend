@@ -29,15 +29,15 @@ const InvestmentProfileUI: React.FC = () => {
     username: 'mock',
     email: 'mock@gmail.com',
   });
-  const startYear = 2025;
+  const startYear = 2026;
   const endYear = 2030; // หรือจะใช้ dynamic: new Date().getFullYear() + 5
 
   const taxYears = Array.from({ length: endYear - startYear + 1 }, (_, i) => startYear + i);
 
   // เปลี่ยนจาก data -> allYearsData
   const [allYearsData, setAllYearsData] = useState<{ [year: number]: UserTaxInfo }>({
-    2025: {
-      taxYear: 2025,
+    2026: {
+      taxYear: 2026,
       salary: 0, 
       bonus: 0, 
       otherIncome: 0,
@@ -60,7 +60,7 @@ const InvestmentProfileUI: React.FC = () => {
     },
   });
 
-  const [currentYear, setCurrentYear] = useState(2025);
+  const [currentYear, setCurrentYear] = useState(2026);
   const [isEditing, setIsEditing] = useState(false);
   const [backupData, setBackupData] = useState<UserTaxInfo | null>(null);
 
