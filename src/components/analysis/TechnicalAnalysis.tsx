@@ -18,6 +18,8 @@ import {
   PointElement,
   LineElement,
   BarElement,
+  LineController,
+  BarController,
   Title,
   Tooltip,
   Legend,
@@ -28,7 +30,10 @@ import { Chart } from 'react-chartjs-2';
 
 ChartJS.register(
   CategoryScale, LinearScale, PointElement, LineElement, 
-  BarElement, Title, Tooltip, Legend, Filler
+  BarElement,
+  LineController,
+  BarController,
+  Title, Tooltip, Legend, Filler
 );
 
 interface TechnicalAnalysisProps {
