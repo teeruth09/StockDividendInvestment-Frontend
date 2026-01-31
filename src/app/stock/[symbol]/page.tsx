@@ -100,6 +100,8 @@ export default function StockDetailPage() {
     const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
+    const [dateError, setDateError] = useState<string | null>(null);
+
     const [activeTab, setActiveTab] = useState<InfoTabKey>('info'); // 'info' คือ ข้อมูลหลักทรัพย์
     
     // 1. กำหนดอัตรา Commission และ VAT
@@ -338,16 +340,25 @@ export default function StockDetailPage() {
             if (tradeMode === 0) { 
                 // โหมด "ซื้อ": เรียก API ใหม่ที่รวมทั้ง ราคา และ ปันผล
                 const result : PurchaseMetadataResponse = await getPurchaseMetadataApi(stockSymbol, dateStr, tradeQty || 100);
+                if (!result || result.pricePerShare === null) {
+                    setDateError("ไม่พบข้อมูลราคาในวันที่เลือก (อาจเป็นวันหยุดตลาด)");
+                    setTradePrice(null);
+                    setPurchaseBenefit(null);
+                    return;
+                }
                 setTradePrice(result.pricePerShare);
                 setPurchaseBenefit(result);
+                setDateError(null);
             } else {
                 // โหมด "ขาย": เรียก API เดิมดึงแค่ราคา
                 const price = await fetchPriceByDate(stockSymbol, newDate);
                 setTradePrice(price);
                 setPurchaseBenefit(null);
+                setDateError(null);
             }
         } catch (err) {
             console.error("Error fetching trade data:", err);
+            setDateError("ไม่พบข้อมูลราคาในวันที่เลือก (อาจเป็นวันหยุดตลาด)");
             setTradePrice(null);
             setPurchaseBenefit(null);
         } finally {
@@ -614,16 +625,16 @@ export default function StockDetailPage() {
                             label="เลือกวันเพื่อดำเนินการจำลอง"
                             value={tradeDate}
                             onChange={handleTradeDateChange}
-                            // onChange={(newDate) => {
-                            //     setTradeDate(newDate);
-                            //     if (newDate) {
-                            //     fetchPriceByDate(stockSymbol, newDate).then(setTradePrice);
-                            //     }
-                            // }}
                             slotProps={{
                                 textField: {
-                                fullWidth: true,
+                                    fullWidth: true,
+                                    error: !!dateError,
+                                    helperText: dateError || "เลือกวันทำการ (จันทร์-ศุกร์)",
                                 },
+                            }}
+                            shouldDisableDate={(date) => {
+                                const day = date.getDay();
+                                return day === 0 || day === 6;
                             }}
                         />
                         </LocalizationProvider>
@@ -826,7 +837,8 @@ export default function StockDetailPage() {
                                 !token ||
                                 isSubmitting || 
                                 tradePrice === null || 
-                                tradeQty <= 0
+                                tradeQty <= 0 ||
+                                !!dateError
                             }
                         >
                             {isSubmitting 

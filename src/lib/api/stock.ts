@@ -228,7 +228,7 @@ export async function getStockSummaryApi(
 export async function fetchPriceByDate(
     symbol: string, 
     date: Date 
-): Promise<number> {
+): Promise<number | null> {
     
   const dateString = formatDate(date); 
   
@@ -243,6 +243,10 @@ export async function fetchPriceByDate(
       },
       cache: "no-store", 
   });
+
+  if (res.status === 404) {
+    return null; 
+  }
 
   if (!res.ok) {
       const error = await res.json().catch(() => ({}));
@@ -269,6 +273,10 @@ export async function getPurchaseMetadataApi(
         headers: { "Content-Type": "application/json" },
         cache: "no-store",
     });
+
+    if (res.status === 404) {
+        return null; 
+    }
 
     if (!res.ok) {
         const error = await res.json().catch(() => ({}));
