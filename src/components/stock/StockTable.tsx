@@ -47,8 +47,8 @@ export default function StockTable() {
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [dense, setDense] = useState(false);
-  const [order, setOrder] = useState<'asc' | 'desc'>('asc');
-  const [orderBy, setOrderBy] = useState<string>('stock_symbol');
+  const [order, setOrder] = useState<'asc' | 'desc'>('desc');
+  const [orderBy, setOrderBy] = useState<string>('stockSymbol');
 
   const [search, setSearch] = useState<string>("");
   const [sector, setSector] = useState<string>("");
