@@ -1,5 +1,6 @@
 import { DividendReceived, RawDividendReceived, RawUpcomingDividend, UpcomingDividend } from "@/types/dividend";
 import { RawDividendData, Dividend } from "@/types/dividend";
+import { TransactionHistoryFilters } from "@/types/transaction";
 import { mapRawDividendReceived, mapRawUpcomingDividend } from "@/utils/dividend-mapper";
 import { mapRawDividendsToDividends } from "@/utils/stock-mapper";
 
@@ -43,9 +44,18 @@ export async function getLatestDividendApi(
 
 export async function getDividendReceivedApi(
     token: string, 
+    filters: TransactionHistoryFilters = {}
 ): Promise<DividendReceived[]> {
     
-    const url = `${process.env.NEXT_PUBLIC_API_URL}/dividends/received`;
+    const baseUrl = `${process.env.NEXT_PUBLIC_API_URL}/dividends/received`;
+
+    const params = new URLSearchParams();
+
+    if (filters.symbol) {
+        params.append('symbol', filters.symbol);
+    }
+
+    const url = params.toString() ? `${baseUrl}?${params.toString()}` : baseUrl;
     
     const res = await fetch(url, {
         method: 'GET',
@@ -57,6 +67,7 @@ export async function getDividendReceivedApi(
     });
 
     if (!res.ok) {
+        if (res.status === 404) return [];
         const error = await res.json().catch(() => ({}));
         throw new Error(error.message || 'Failed to fetch dividends received');
     }

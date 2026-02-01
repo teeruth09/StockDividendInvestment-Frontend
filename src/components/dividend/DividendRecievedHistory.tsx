@@ -4,7 +4,8 @@ import React, { useEffect, useState, useMemo } from 'react';
 import {
   Box, Typography, Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, Paper, TableSortLabel, TextField,
-  CircularProgress, Chip
+  CircularProgress, Chip,
+  Button
 } from '@mui/material';
 import { useAuth } from '@/app/contexts/AuthContext';
 import FormattedNumberDisplay from '../FormattedNumberDisplay';
@@ -18,7 +19,7 @@ export default function DividendReceivedHistory() {
   const { token } = useAuth();
   const [data, setData] = useState<DividendReceived[]>([]);
   const [loading, setLoading] = useState(false);
-  const [, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const [search, setSearch] = useState("");
   const [order, setOrder] = useState<Order>('desc');
@@ -31,7 +32,11 @@ export default function DividendReceivedHistory() {
     try {
       setLoading(true);
       setError(null); // ล้าง error เก่า
-      const res = await getDividendReceivedApi(token);
+      const filters = {
+          symbol: search || undefined,
+      };
+
+      const res = await getDividendReceivedApi(token, filters);
       setData(res);
     } catch (error) {
         if (error instanceof Error) {
@@ -72,7 +77,8 @@ export default function DividendReceivedHistory() {
         ประวัติการรับเงินปันผล
       </Typography>
 
-      <Box sx={{ mb: 2 }}>
+      {/* Filter Controls */}
+      <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
         <TextField
           label="ค้นหาหุ้น"
           variant="outlined"
@@ -80,10 +86,13 @@ export default function DividendReceivedHistory() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
+        <Button variant="contained" onClick={fetchData}>
+          ค้นหา
+        </Button>
       </Box>
 
       <TableContainer component={Paper}>
-        <Table size="small">
+        <Table>
           <TableHead sx={{ bgcolor: 'grey.50' }}>
             <TableRow>
               <TableCell>
@@ -108,7 +117,22 @@ export default function DividendReceivedHistory() {
           <TableBody>
             {loading ? (
               <TableRow><TableCell colSpan={8} align="center"><CircularProgress size={24} /></TableCell></TableRow>
-            ) : sortedData.map((row) => (
+            ) : error ? (
+              <TableRow>
+                <TableCell colSpan={8} align="center" sx={{ py: 3 }}>
+                  {error.includes('not found') || error.includes('404') ? (
+                    <Typography color="text.secondary">
+                      ไม่พบประวัติเงินปันผลที่ได้รับ
+                    </Typography>
+                  ) : (
+                    <Typography color="error.main">{error}</Typography>
+                  )}
+                </TableCell>
+              </TableRow>
+            
+          ) : sortedData.length > 0 ? (
+              
+              sortedData.map((row) => (
               <TableRow key={row.receivedId} hover>
                 <TableCell>{row.paymentReceivedDate.toLocaleDateString('th-TH')}</TableCell>
                 <TableCell>
@@ -142,8 +166,17 @@ export default function DividendReceivedHistory() {
                       <FormattedNumberDisplay value={row.netDividendReceived} decimalScale={2} />
                    </Typography>
                 </TableCell>
-              </TableRow>
-            ))}
+              </TableRow> 
+              ))
+              ) : (
+                !loading && (
+                  <TableRow>
+                    <TableCell colSpan={8} align="center">
+                        ไม่พบประวัติเงินปันผลที่ได้รับ
+                    </TableCell>
+                </TableRow>
+                )     
+            )}
           </TableBody>
         </Table>
       </TableContainer>
