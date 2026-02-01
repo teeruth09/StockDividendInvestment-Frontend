@@ -22,6 +22,7 @@ export interface Dividend {
 }
 export interface RawDividendReceived {
   received_id: string;
+  status: 'PREDICTED' | 'CONFIRMED' | 'RECEIVED';
   user_id: string;
   dividend_id: string;
   shares_held: number;
@@ -30,11 +31,17 @@ export interface RawDividendReceived {
   net_dividend_received: number;
   payment_received_date: string;
   created_at: string;
+  //ข้อมูลจากฝั่ง Predict (จะมีค่าเมื่อเป็น PREDICTED)
+  predicted_stock_symbol: string | null;
+  prediction_date: string | null;
+  predicted_ex_date: string | null,
+  
+  //ข้อมูลจากฝั่งประกาศจริง (จะเป็น null เมื่อเป็น PREDICTED)
   dividend: {
     stock_symbol: string;
     ex_dividend_date: string;
     dividend_per_share: number;
-  };
+  } | null;
   taxCredit: {
     tax_credit_amount: number;
     corporate_tax_rate: number;

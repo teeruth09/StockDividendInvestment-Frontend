@@ -62,7 +62,6 @@ export default function TransactionHistoryTable() {
   const [search, setSearch] = useState("");
   const [transactionType, setTransactionType] = useState<TransactionTypeFilter>('ALL');
   const [order, setOrder] = useState<Order>('desc');
-  // 💡 Sort ตาม created_at เพื่อให้รายการล่าสุดอยู่บน
   const [orderBy, setOrderBy] = useState<keyof Transaction>('createdAt'); 
 
 
@@ -89,7 +88,7 @@ export default function TransactionHistoryTable() {
     } finally {
       setLoading(false);
     }
-};
+  };
 
   useEffect(() => {
     fetchData();
@@ -127,7 +126,7 @@ export default function TransactionHistoryTable() {
       {/* Filter Controls */}
       <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
         <TextField
-          label="ค้นหาหลักทรัพย์"
+          label="ค้นหาหุ้น"
           variant="outlined"
           size="small"
           value={search}
@@ -161,7 +160,12 @@ export default function TransactionHistoryTable() {
           <TableHead>
             <TableRow>
               {(['createdAt', 'stockSymbol', 'transactionType', 'quantity', 'pricePerShare', 'totalAmount'] as const).map((headCell) => (
-                <TableCell key={headCell} align={['quantity', 'pricePerShare', 'totalAmount'].includes(headCell) ? 'right' : 'left'}>
+                <TableCell 
+                  key={headCell} 
+                  align={
+                    headCell === 'transactionType' 
+                    ? 'center' 
+                    : ['quantity', 'pricePerShare', 'totalAmount'].includes(headCell) ? 'right' : 'left'}>
                   <TableSortLabel
                     active={orderBy === headCell}
                     direction={orderBy === headCell ? order : 'asc'}
@@ -176,7 +180,9 @@ export default function TransactionHistoryTable() {
                   </TableSortLabel>
                 </TableCell>
               ))}
-              <TableCell>รายละเอียด</TableCell>
+              <TableCell align="center">
+                รายละเอียด
+              </TableCell>
             </TableRow>
           </TableHead>
 
@@ -194,7 +200,7 @@ export default function TransactionHistoryTable() {
                 </TableCell>
                 
                 {/* 3. ประเภท (ใช้ Chip เพื่อแสดงสี) */}
-                <TableCell>
+                <TableCell align="center">
                   <Chip
                     label={tx.transactionType === 'BUY' ? 'ซื้อ' : 'ขาย'}
                     size="small"
@@ -229,7 +235,7 @@ export default function TransactionHistoryTable() {
                 </TableCell>
                 
                 {/* 7. รายละเอียด (Link) */}
-                <TableCell>
+                <TableCell align="center">
                     <Link href={`/transaction/${tx.transactionId}`}>
                       <Button size="small" variant="outlined">ดู</Button>
                     </Link>

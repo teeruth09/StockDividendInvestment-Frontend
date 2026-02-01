@@ -11,6 +11,7 @@ import {
   IconButton,
   Checkbox,
   FormControlLabel,
+  CircularProgress,
 } from '@mui/material'
 import {
   ArrowBack,
@@ -18,37 +19,53 @@ import {
 import { useState } from 'react'
 import NextLink from 'next/link'
 import { useRouter } from 'next/navigation'
-import { registerApi } from '@/lib/api/auth';
 import { Alert, Snackbar } from '@mui/material';
+import { useAuth } from '../contexts/AuthContext'
 
 export default function RegisterPage() {
 
     const router = useRouter()
+    const { register, isLoading } = useAuth()
+
     const [showPassword, setShowPassword] = useState(false)
     const [username, setUsername] = useState('')
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
-    const [acceptTerms, setAcceptTerms] = useState(false)
+    //const [acceptTerms, setAcceptTerms] = useState(false)
     const [error, setError] = useState('');
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setError('');
-        if (!acceptTerms) {
-        alert('กรุณายอมรับเงื่อนไขการใช้งาน')
-        return
-        }
-        console.log('Register attempt:', { username, email, password, acceptTerms })
+        // if (!acceptTerms) {
+        //     alert('กรุณายอมรับเงื่อนไขการใช้งาน')
+        //     return
+        // }
         try {
             localStorage.removeItem('x-access-token');
-            const {accessToken} = await registerApi({ username, email, password });
-            localStorage.setItem('x-access-token', accessToken);
+            await register({ username, email, password });
             router.push('/');
         } catch (err:unknown) {
             if (err instanceof Error) {
                 setError(err.message);
             }
         }
+    }
+
+    // แสดง loading ถ้ากำลังเช็ค auth status
+    if (isLoading) {
+        return (
+            <Box
+                sx={{
+                    minHeight: '100vh',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                }}
+            >
+                <CircularProgress />
+            </Box>
+        )
     }
 
     return (
@@ -164,7 +181,7 @@ export default function RegisterPage() {
                     </Box>
 
                     {/* Terms and Conditions */}
-                    <Box sx={{ mb: 3 }}>
+                    {/* <Box sx={{ mb: 3 }}>
                     <FormControlLabel
                         control={
                         <Checkbox
@@ -207,7 +224,7 @@ export default function RegisterPage() {
                         </Typography>
                         }
                     />
-                    </Box>
+                    </Box> */}
 
                     {/* Register Button */}
                     <Button
