@@ -13,13 +13,13 @@ up:
 	docker-compose up -d
 
 up-prod:
-	sudo docker-compose -f docker-compose.prod.yml up -d --build
+	sudo docker compose -f docker-compose.prod.yml up -d --build
 
 down:
 	docker-compose down
 
 down-prod:
-	sudo docker-compose -f docker-compose.prod.yml down
+	sudo docker compose -f docker-compose.prod.yml down
 
 build:
 	docker-compose build
