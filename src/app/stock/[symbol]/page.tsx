@@ -7,7 +7,6 @@ import {
   CardContent,
   Typography,
   Button,
-  TextField,
   Tabs,
   Tab,
   Divider,
@@ -76,7 +75,7 @@ export default function StockDetailPage() {
     // mock data
     const stockSymbol = symbol;
 
-    const [timeframe, setTimeframe] = useState<"1D" | "5D" | "1M" | "3M" | "6M" | "1Y" | "3Y" | "5Y">("1D");
+    const [timeframe, setTimeframe] = useState<"1D" | "5D" | "1M" | "3M" | "6M" | "1Y" | "3Y" | "5Y">("1Y");
     //const [chartData, setChartData] = useState(getChartDataByTimeframe(timeframe));
     
     const [chartData, setChartData] = useState<StockChartData>({
@@ -92,7 +91,7 @@ export default function StockDetailPage() {
     const [stockName, setStockName] = useState<string | null>(null);
     
     const [tradeDate, setTradeDate] = useState<Date | null>(new Date());
-    const [tradeQty, setTradeQty] = useState<number>(100);
+    const [tradeQty, setTradeQty] = useState<number | null>(100);
     const [tradePrice, setTradePrice] = useState<number | null>(latestPrice);
     const [tradeMode, setTradeMode] = useState<0 | 1>(0);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -367,7 +366,7 @@ export default function StockDetailPage() {
         
     };
     useEffect(() => {
-        if (tradeMode === 0 && tradeDate && tradeQty > 0) {
+        if (tradeMode === 0 && tradeDate && typeof tradeQty === 'number' && tradeQty > 0) {
             handleTradeDateChange(tradeDate);
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -639,7 +638,17 @@ export default function StockDetailPage() {
                         />
                         </LocalizationProvider>
 
-                        <TextField fullWidth type="number" label="จำนวนหุ้น" value={tradeQty} onChange={(e) => setTradeQty(Number(e.target.value))} />
+                        <NumericInput
+                            label="จำนวนหุ้น"
+                            value={tradeQty}
+                            onValueChange={(value) => 
+                                setTradeQty(typeof value === 'number' ? value : null)
+                            }
+                            textFieldProps={{ 
+                                fullWidth: true,
+                                InputLabelProps: { shrink: true }
+                            }}
+                        />
                         <NumericInput
                             label="ราคาต่อหุ้น (บาท)"
                             value={tradePrice ?? latestPrice ?? null}
@@ -706,7 +715,7 @@ export default function StockDetailPage() {
                                 </Typography>
                             </Box>
                         </Box>
-                        {tradeMode === 0 && purchaseBenefit?.estimatedDividend && (
+                        {tradeMode === 0 && purchaseBenefit?.estimatedDividend && typeof tradeQty === 'number' && tradeQty > 0 && (
                             <Box sx={{ 
                                 mt: 1, 
                                 p: 1.5, 
@@ -837,7 +846,7 @@ export default function StockDetailPage() {
                                 !token ||
                                 isSubmitting || 
                                 tradePrice === null || 
-                                tradeQty <= 0 ||
+                                !(typeof tradeQty === 'number' && tradeQty > 0) ||
                                 !!dateError
                             }
                         >

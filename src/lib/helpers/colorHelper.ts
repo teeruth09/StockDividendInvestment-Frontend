@@ -18,6 +18,25 @@ export function getChangeColor(value: number | null | undefined) {
     return 'inherit';
 };
 
+//Check TDTS score >= 0
+export function getChangeTdtsScore(value: number | null | undefined) {
+    if (value === undefined || value === null) return 'inherit';
+
+    // 1. สถานการณ์ดีเยี่ยม (สีเขียว)
+    if (value <= 0) return '#4caf50';
+    
+    // 2. ปลอดภัย (สีฟ้า - Info)
+    if (value > 0 && value < 1) return '#0288d1';
+    
+    // 3. จุดคุ้มทุน (สีส้ม - Warning)
+    if (value === 1) return '#ed6c02';
+    
+    // 4. อันตราย (สีแดง - Error)
+    if (value > 1) return '#f44336';
+
+    return 'inherit';
+};
+
 //Check Text Color
 export function getChangeTextColor(value: string | null | undefined) {
     if (value === undefined || value === null) return 'inherit';

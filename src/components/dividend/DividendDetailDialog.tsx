@@ -44,7 +44,7 @@ export const DividendDetailDialog = ({ open, onClose, event }: Props) => {
                 {event.isPredict && (
                     <Box sx={{ mb: 2, p: 1, bgcolor: 'info.light', borderRadius: 1 }}>
                         <Typography variant="caption" color="info.contrastText" fontWeight="bold" >
-                            * ข้อมูลนี้เป็นการคาดการณ์โดยระบบ (Confidence: {event.confidence_score}%)
+                            * ข้อมูลนี้เป็นการคาดการณ์โดยระบบ
                         </Typography>
                     </Box>
                 )}
