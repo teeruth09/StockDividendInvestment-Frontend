@@ -12,7 +12,7 @@ import Typography from '@mui/material/Typography';
 import Paper from '@mui/material/Paper';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Switch from '@mui/material/Switch';
-import { Alert, Avatar, Button, Chip, CircularProgress, Stack } from '@mui/material';
+import { Alert, Avatar, Button, Chip, CircularProgress, Divider, Stack } from '@mui/material';
 import { TrendingUp } from '@mui/icons-material';
 import { getRecommendedStockApi } from '@/lib/api/recommendation';
 import { EnhancedTableHead } from "@/components/home/HeadTable";
@@ -36,20 +36,20 @@ export const headCells: HeadCell[] = [
   { id: 'stockSector', numeric: false, label: 'กลุ่ม', width: '100px', align: 'left' },
   { id: 'clusterName', numeric: false, label: 'Cluster', width: '180px', align: 'left' },
   { id: 'latestPrice', numeric: true, label: 'ราคา', width: '90px', align: 'right' },
-  { id: 'totalScore', numeric: true, label: 'Score', width: '90px', align: 'right' },
+  { id: 'totalScore', numeric: true, label: 'Total Score(%)', width: '90px', align: 'right' },
   { id: 'dyPercent', numeric: true, label: 'Yield(%)', width: '100px', align: 'right' },
   { id: 'dividendExDate', numeric: false, label: 'วันที่ XD', width: '120px', align: 'right' }, // วันที่สากลนิยมชิดขวาเพื่อให้ตรงกับตัวเลขปันผล
   { id: 'dividendDps', numeric: true, label: 'ปันผล(บาท)', width: '100px', align: 'right' },
   { id: 'predictExDate', numeric: false, label: 'คาดการณ์ XD', width: '120px', align: 'right' },
   { id: 'predictDps', numeric: true, label: 'คาดการณ์ปันผล', width: '110px', align: 'right' },
-  { id: 'retBfTema', numeric: true, label: 'Ret Before(%)', width: '110px', align: 'right' },
-  { id: 'retAfTema', numeric: true, label: 'Ret After(%)', width: '110px', align: 'right' },
+  { id: 'retBfTema', numeric: true, label: 'ผลตอบแทนก่อนXD(%)', width: '110px', align: 'right' },
+  { id: 'retAfTema', numeric: true, label: 'ผลตอบแทนหลังXD(%)', width: '110px', align: 'right' },
 ];
 
 export default function StockTable() {
   const [data, setData] = useState<StockRecommendation[]>([]);
   const [loading, setLoading] = useState(false);
-  const [dense, setDense] = useState(false); // ตัวแปรที่ทำให้เกิด Error ถ้าลืมประกาศ
+  const [dense, setDense] = useState(false);
   const [order, setOrder] = useState<'asc' | 'desc'>('desc');
   const [orderBy, setOrderBy] = useState<string>('totalScore');
   const [page, setPage] = useState(0);
@@ -511,6 +511,58 @@ export default function StockTable() {
         control={<Switch checked={dense} onChange={(e) => setDense(e.target.checked)} />}
         label="แสดงแบบกระชับ"
       />
+      <Box sx={{ mt: 2, p: 2, bgcolor: '#f9f9f9', borderRadius: 1 }}>
+        <Typography variant="body2" sx={{ fontWeight: 'bold', color: 'primary.main', display: 'block', mb: 0.5 }}>
+          หมายเหตุและคำนิยาม:
+        </Typography>
+        {/* ส่วนที่ 1: กลุ่ม Cluster */}
+        <Box sx={{ mb: 2 }}>
+          <Typography variant="caption" sx={{ fontWeight: 'bold', color: 'text.secondary', display: 'block', mb: 0.5, pl: 0.5 }}>
+            พฤติกรรมหุ้น (Stock Behavior Clusters)
+          </Typography>
+          <Box sx={{ pl: 2, borderLeft: '2px solid', borderColor: 'divider' }}>
+            <Typography variant="caption" sx={{ display: 'block', color: 'text.primary', mb: 0.5 }}>
+              • <strong>Golden Goose :</strong>ราคาหุ้นมีแนวโน้มปรับตัวขึ้นได้อย่างโดดเด่นทั้งในช่วงก่อนและหลังขึ้นเครื่องหมาย XD สะท้อนถึงความเชื่อมั่นและแรงซื้อที่ต่อเนื่องราคายืนได้หรือเพิ่มขึ้น (ไม่มีความเสี่ยง Dividend Trap)
+            </Typography>
+            <Typography variant="caption" sx={{ display: 'block', color: 'text.primary', mb: 0.5 }}>
+              • <strong>Rebound Star :</strong>ราคามักมีการย่อตัวลงมาก่อนในช่วงสั้นๆ แต่มีสถิติการดีดตัวกลับ (Rebound) ที่แข็งแกร่งหลังจากนั้น ทำให้เป็นจังหวะที่ดีในการเข้าลงทุน
+            </Typography>
+            <Typography variant="caption" sx={{ display: 'block', color: 'text.primary', mb: 0.5 }}>
+              • <strong>Dividend Trap :</strong>ราคาตลาดปรับตัวขึ้นสูงเกินมูลค่าพื้นฐาน ทำให้มีความเสี่ยงที่ราคาหุ้นจะปรับตัวลดลงแรงทั้งก่อนและหลัง XD ซึ่งอาจทำให้ผลขาดทุนจากราคาสูงกว่าปันผลที่ได้รับ
+            </Typography>
+            <Typography variant="caption" sx={{ display: 'block', color: 'text.primary', mb: 0.5 }}>
+              • <strong>Sell on Fact :</strong>ราคามักตอบรับข่าวดีไปล่วงหน้าแล้ว ทำให้เกิดแรงเทขายทำกำไรออกมาเมื่อถึงช่วง XD ส่งผลให้ราคาหุ้นมักจะทรงตัวหรือปรับตัวลดลงหลังจากนั้น
+            </Typography>
+          </Box>
+        </Box>
+        <Box>
+          <Typography variant="caption" sx={{ fontWeight: 'bold', color: 'text.secondary', display: 'block', mb: 0.5, pl: 0.5 }}>
+            ตัวชี้วัดสำคัญ (Key Metrics)
+          </Typography>
+          <Box sx={{ pl: 2, borderLeft: '2px solid', borderColor: 'divider' }}>
+            <Typography variant="caption" sx={{ display: 'block', color: 'text.primary', mb: 0.5 }}>
+              • <strong>Yield (%) :</strong>ค่าที่บอกบ่งบอกว่า ถ้าคุณซื้อหุ้นตัวนี้ที่ราคาปัจจุบัน คุณจะได้รับเงินปันผลคิดเป็นกี่เปอร์เซ็นต์ต่อปี,
+            </Typography>
+            <Typography variant="caption" sx={{ display: 'block', color: 'text.primary', mb: 0.5 }}>
+              • <strong>Total Score (%) : </strong>ค่าคะแนนที่สรุป ความคุ้มค่าสุทธิที่นักลงทุนคาดว่าจะได้รับจริง โดยคำนวณจากเงินปันผล หักลบด้วยความเสี่ยงที่ราคาจะร่วง (Price Drop) และบวกกลับด้วยโอกาสที่ราคาจะดีดตัวคืน (Rebound) เพื่อช่วยคัดกรองว่าหุ้นตัวไหนคุ้มค่าที่จะถือข้าม XD มากที่สุด
+            </Typography>
+          </Box>
+        </Box>
+        
+        <Divider sx={{ my: 1.5, opacity: 0.6 }} />
+
+        <Typography 
+          variant="body2"
+          sx={{ 
+            mt: 1, 
+            display: 'block', 
+            color: 'error.main',
+            lineHeight: 1.5
+          }}
+        >
+          <strong>คำเตือน:</strong> ข้อมูลนี้จัดทำขึ้นเพื่อใช้เป็นข้อมูลประกอบการศึกษาหรือใช้งานส่วนบุคคลเท่านั้น มิใช่คำแนะนำในการลงทุนหรือความเห็นประกอบการซื้อขายหลักทรัพย์ ผู้ลงทุนควรศึกษาข้อมูลเพิ่มเติมและตัดสินใจด้วยตนเอง
+        </Typography>
+      </Box>
     </Box>
   );
 }

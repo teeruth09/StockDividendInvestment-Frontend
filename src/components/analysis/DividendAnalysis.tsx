@@ -42,8 +42,8 @@ export default function DividendAnalysis({ data, isLoading }: DividendAnalysisPr
               
               {/* โซน TEMA ใส่สีพื้นหลัง Header ต่างออกไปเล็กน้อย */}
               <TableCell align="right" sx={{ bgcolor: '#F0F4F8' }}>TEMA Price</TableCell>
-              <TableCell align="right" sx={{ bgcolor: '#F0F4F8' }}>ผลตอบแทนก่อน XD (%)</TableCell>
-              <TableCell align="right" sx={{ bgcolor: '#F0F4F8' }}>ผลตอบแทนหลัง XD (%)</TableCell>
+              <TableCell align="right" sx={{ bgcolor: '#F0F4F8' }}>Ret Before (%)</TableCell>
+              <TableCell align="right" sx={{ bgcolor: '#F0F4F8' }}>Ret After (%)</TableCell>
 
               <TableCell align="center" sx={{ bgcolor: '#f5f5f5' }}>Price Change (PD %)</TableCell>
               <TableCell align="right" sx={{ bgcolor: '#f5f5f5' }}>TDTS Score</TableCell>
@@ -147,26 +147,48 @@ export default function DividendAnalysis({ data, isLoading }: DividendAnalysisPr
       
       <Box sx={{ mt: 2, p: 2, bgcolor: '#f9f9f9', borderRadius: 1 }}>
 
-        {/* ส่วนที่ อธิบาย T-DTS */}
         <Typography variant="body2" sx={{ fontWeight: 'bold', color: 'primary.main', display: 'block', mb: 0.5 }}>
-          การตีความดัชนีกับดักปันผลทางเทคนิค (TDTS)
+          หมายเหตุและคำนิยาม:
         </Typography>
-        
-        <Box sx={{ pl: 1 }}>
-          <Typography variant="caption" sx={{ display: 'block', color: 'text.primary', mb: 0.5 }}>
-            • <strong>TDTS ≤ 0 :</strong> <Box component="span" sx={{ color: 'success.main' }}>สถานการณ์ดีเยี่ยม</Box> ราคายืนได้หรือเพิ่มขึ้น (ไม่มีความเสี่ยง Dividend Trap)
+
+        <Box sx={{ mb: 2 }}>
+          <Typography variant="caption" sx={{ fontWeight: 'bold', color: 'text.secondary', display: 'block', mb: 0.5, pl: 0.5 }}>
+            การตีความดัชนีกับดักปันผลทางเทคนิค (TDTS)
           </Typography>
-          <Typography variant="caption" sx={{ display: 'block', color: 'text.primary', mb: 0.5 }}>
-            • <strong>TDTS &lt; 1 :</strong> <Box component="span" sx={{ color: 'info.main' }}>ปลอดภัย</Box> ราคาหุ้นร่วงน้อยกว่าปันผลที่ได้รับ (PD &lt; DY) ยังคงได้กำไรสุทธิ
-          </Typography>
-          <Typography variant="caption" sx={{ display: 'block', color: 'text.primary', mb: 0.5 }}>
-            • <strong>TDTS = 1 :</strong> <Box component="span" sx={{ color: 'warning.main' }}>จุดคุ้มทุน</Box> ราคาหุ้นร่วงเท่ากับปันผลที่ได้รับพอดี (PD = DY)
-          </Typography>
-          <Typography variant="caption" sx={{ display: 'block', color: 'text.primary', mb: 0.5 }}>
-            • <strong>TDTS &gt; 1 :</strong> <Box component="span" sx={{ color: 'error.main', fontWeight: 'bold' }}>อันตราย (Dividend Trap)</Box> ราคาหุ้นร่วงมากกว่าปันผลที่ได้รับ นักลงทุนขาดทุนสุทธิ
-          </Typography>
+          <Box sx={{ pl: 2, borderLeft: '2px solid', borderColor: 'divider' }}>
+            <Typography variant="caption" sx={{ display: 'block', color: 'text.primary', mb: 0.5 }}>
+              • <strong>TDTS ≤ 0 :</strong> <Box component="span" sx={{ color: 'success.main' }}>สถานการณ์ดีเยี่ยม</Box> ราคายืนได้หรือเพิ่มขึ้น (ไม่มีความเสี่ยง Dividend Trap)
+            </Typography>
+            <Typography variant="caption" sx={{ display: 'block', color: 'text.primary', mb: 0.5 }}>
+              • <strong>TDTS &lt; 1 :</strong> <Box component="span" sx={{ color: 'info.main' }}>ปลอดภัย</Box> ราคาหุ้นร่วงน้อยกว่าปันผลที่ได้รับ (PD &lt; DY) ยังคงได้กำไรสุทธิ
+            </Typography>
+            <Typography variant="caption" sx={{ display: 'block', color: 'text.primary', mb: 0.5 }}>
+              • <strong>TDTS = 1 :</strong> <Box component="span" sx={{ color: 'warning.main' }}>จุดคุ้มทุน</Box> ราคาหุ้นร่วงเท่ากับปันผลที่ได้รับพอดี (PD = DY)
+            </Typography>
+            <Typography variant="caption" sx={{ display: 'block', color: 'text.primary', mb: 0.5 }}>
+              • <strong>TDTS &gt; 1 :</strong> <Box component="span" sx={{ color: 'error.main', fontWeight: 'bold' }}>อันตราย (Dividend Trap)</Box> ราคาหุ้นร่วงมากกว่าปันผลที่ได้รับ นักลงทุนขาดทุนสุทธิ
+            </Typography>
+          </Box>
         </Box>
-        
+        <Box>
+          <Typography variant="caption" sx={{ fontWeight: 'bold', color: 'text.secondary', display: 'block', mb: 0.5, pl: 0.5 }}>
+            ตัวชี้วัดสำคัญ (Key Metrics)
+          </Typography>
+          <Box sx={{ pl: 2, borderLeft: '2px solid', borderColor: 'divider' }}>
+            <Typography variant="caption" sx={{ display: 'block', color: 'text.primary', mb: 0.5 }}>
+              • <strong>TEMA Price :</strong>ราคาหุ้นแบบที่ระบบช่วยกรอง noise ออกไปแล้วทำให้เห็นเทรนด์ราคาที่แท้จริงชัดเจนกว่าการดูแค่ราคาปิดปกติ
+            </Typography>
+            <Typography variant="caption" sx={{ display: 'block', color: 'text.primary', mb: 0.5 }}>
+              • <strong>Ret Before (%) :</strong>% ของราคาหุ้นในช่วง 15 วันก่อนขึ้นเครื่องหมาย XD ราคาพุ่งไปมากน้อยแค่ไหน,
+            </Typography>
+            <Typography variant="caption" sx={{ display: 'block', color: 'text.primary', mb: 0.5 }}>
+              • <strong>Ret After (%) :</strong>% ของราคาหุ้นในช่วง 15 วันหลังขึ้น XD ไปแล้วว่าราคาหุ้นสามารถ rebound ได้มากน้อยแค่ไหน
+            </Typography>
+            <Typography variant="caption" sx={{ display: 'block', color: 'text.primary', mb: 0.5 }}>
+              • <strong>Price Change (PD%) :</strong>ค่าที่บอกว่า เมื่อขึ้น XD ราคาหุ้นร่วงลงไปเท่าไหร่เมื่อเทียบกับเมื่อวาน ซึ่งค่านี้สำคัญมากเพราะเราจะเอาไปเทียบกับเงินปันผล Yield (%) เพื่อดูว่าได้ปันผลมาคุ้มกับราคาที่ร่วงไปหรือไม่
+            </Typography>
+          </Box>
+        </Box>
         <Divider sx={{ my: 1.5, opacity: 0.6 }} />
 
         {/* ส่วนคำเตือน */}
