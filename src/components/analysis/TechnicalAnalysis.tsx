@@ -24,7 +24,8 @@ import {
   Tooltip,
   Legend,
   Filler,
-  ChartOptions
+  ChartOptions,
+  LegendItem,
 } from 'chart.js';
 import { Chart } from 'react-chartjs-2';
 
@@ -58,22 +59,33 @@ export default function TechnicalAnalysisView({ data, symbol }: TechnicalAnalysi
         data: chartDataSrc.map(d => d.Close),
         borderColor: '#2196f3',
         backgroundColor: 'rgba(33, 150, 243, 0.1)',
-        fill: true,
+        //fill: true,
         yAxisID: 'yPrice',
         tension: 0.4,
         pointRadius: 0,
       },
       {
         type: 'bar' as const,
-        label: 'MACD Hist',
+        label: 'Histogram',
         data: chartDataSrc.map(d => d.Hist),
-        backgroundColor: chartDataSrc.map(d => d.Hist >= 0 ? 'rgba(38, 166, 154, 0.7)' : 'rgba(239, 83, 80, 0.7)'),
+        backgroundColor: (context: any) => {
+          const index = context.dataIndex;
+          
+          if (context.dataIndex === undefined) {
+            const lastItem = chartDataSrc[chartDataSrc.length - 1];
+            const lastHist = lastItem?.Hist ?? 0;
+            return lastHist >= 0 ? 'rgba(38, 166, 154, 0.7)' : 'rgba(239, 83, 80, 0.7)';
+          }
+
+          const value = chartDataSrc[index]?.Hist ?? 0;
+          return value >= 0 ? 'rgba(38, 166, 154, 0.7)' : 'rgba(239, 83, 80, 0.7)';
+        },
         yAxisID: 'yMACD',
         barPercentage: 0.6,
       },
       {
         type: 'line' as const,
-        label: 'MACD Line',
+        label: 'MACD',
         data: chartDataSrc.map(d => d.MACD),
         borderColor: '#fb8c00',
         borderWidth: 1.5,
@@ -82,7 +94,7 @@ export default function TechnicalAnalysisView({ data, symbol }: TechnicalAnalysi
       },
       {
         type: 'line' as const,
-        label: 'Signal Line',
+        label: 'Signal',
         data: chartDataSrc.map(d => d.Signal),
         borderColor: '#9c27b0',
         borderWidth: 1.5,
@@ -102,7 +114,14 @@ export default function TechnicalAnalysisView({ data, symbol }: TechnicalAnalysi
         type: 'linear',
         display: true,
         position: 'left',
-        title: { display: true, text: 'ราคา (บาท)', font: { weight: 'bold' } },
+        // 1. ปิดการบังคับให้เริ่มที่ 0 เพื่อให้กราฟ "ซูม" เข้าไปที่ช่วงราคาจริง
+        beginAtZero: false, 
+        // 2. ตั้งค่าพื้นที่ว่าง (Padding) ด้านบนและด้านล่าง (เช่น 10% ของช่วงราคา)
+        grace: '100%',
+        // ticks: {
+        //   count: 6 // จำกัดจำนวนตัวเลขแกน Y ไม่ให้รก
+        // },
+        title: { display: true, text: 'ราคาปิด (บาท)', font: { weight: 'bold' } },
         grid: { drawOnChartArea: true }
       },
       yMACD: {
@@ -114,7 +133,33 @@ export default function TechnicalAnalysisView({ data, symbol }: TechnicalAnalysi
       },
     },
     plugins: {
-      legend: { position: 'top', labels: { boxWidth: 12, usePointStyle: true } },
+      legend: { 
+        position: 'top', 
+        labels: { 
+          boxWidth: 12,
+          usePointStyle: true,
+          generateLabels: (chart) => {
+            const datasets = chart.data.datasets;
+            const originalLabels = ChartJS.defaults.plugins.legend.labels.generateLabels(chart);
+
+            return originalLabels.map((label: LegendItem) => {
+              const dataset = datasets[label.datasetIndex!];
+              
+              if (label.text === 'Histogram') {
+                const lastValue = dataset.data[dataset.data.length - 1] as number;
+                const activeColor = lastValue >= 0 ? 'rgba(38, 166, 154, 0.7)' : 'rgba(239, 83, 80, 0.7)';
+                
+                return {
+                  ...label,
+                  fillStyle: activeColor,     // สีพื้นหลังวงกลม
+                  strokeStyle: activeColor,   // สีเส้นขอบวงกลม
+                };
+              }
+              return label;
+            });
+          }
+        } 
+      },
       tooltip: { padding: 10 }
     }
   };
@@ -208,15 +253,26 @@ export default function TechnicalAnalysisView({ data, symbol }: TechnicalAnalysi
           หมายเหตุ:
         </Typography>
   
-        <Box sx={{ pl: 1 }}>
-          <Typography variant="caption" sx={{ display: 'block', color: 'text.primary', mb: 0.5 }}>
-          • <strong>RSI:</strong> &lt; 30 = Oversold (ขายมากเกินไป), &gt; 70 = Overbought (ซื้อมากเกินไป) <br />
+        <Box sx={{ pl: 2, borderLeft: '2px solid', borderColor: 'divider' }}>
+          <Typography variant="caption" sx={{ display: 'block', color: 'text.primary', mb: 0.8 }}>
+            • <strong>RSI (Relative Strength Index):</strong> ตัวชี้วัดแรงซื้อขายสะสม 
+            <Box component="span" sx={{ color: '#f44336', fontWeight: 'bold' }}> &gt; 70 (Overbought)</Box> ระวังการพักตัว, 
+            <Box component="span" sx={{ color: '#4caf50', fontWeight: 'bold' }}> &lt; 30 (Oversold)</Box> มีโอกาสรีบาวด์
           </Typography>
-          <Typography variant="caption" sx={{ display: 'block', color: 'text.primary', mb: 0.5 }}>
-          • <strong>MACD:</strong> หากเส้น MACD ตัดขึ้นเหนือ Signal Line ถือเป็นสัญญาณบวก (Golden Cross) <br />
+          
+          <Typography variant="caption" sx={{ display: 'block', color: 'text.primary', mb: 0.8 }}>
+            • <strong>MACD & Signal Line:</strong> 
+            <Box component="span" sx={{ color: '#2196f3', fontWeight: 'bold' }}> MACD ตัดเหนือ Signal</Box> เป็นสัญญาณเริ่มรอบขาขึ้น (Golden Cross) และหากอยู่เหนือเส้น 0 จะยืนยันเทรนด์ขาขึ้นที่แข็งแกร่ง
           </Typography>
-          <Typography variant="caption" sx={{ display: 'block', color: 'text.primary', mb: 0.5 }}>
-          • <strong>Histogram:</strong> ค่าที่เป็นบวกบ่งบอกถึงแรงส่ง (Momentum) ในทิศทางขาขึ้น
+
+          <Typography variant="caption" sx={{ display: 'block', color: 'text.primary', mb: 0.8 }}>
+            • <strong>Histogram:</strong> แท่งกราฟบอกระยะห่างของ MACD และ Signal 
+            <Box component="span" sx={{ color: '#4caf50' }}> (ค่าบวก/สีเขียว)</Box> คือแรงส่งขาขึ้น และ 
+            <Box component="span" sx={{ color: '#f44336' }}> (ค่าลบ/สีแดง)</Box> คือแรงส่งขาลง
+          </Typography>
+
+          <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary', fontStyle: 'italic', mt: 1 }}>
+            *หมายเหตุ: ข้อมูลทางเทคนิคเป็นการวิเคราะห์จากสถิติในอดีต ไม่ใช่การรับประกันผลตอบแทนในอนาคต
           </Typography>
         </Box>
       
