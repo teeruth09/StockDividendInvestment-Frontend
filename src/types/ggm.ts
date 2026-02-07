@@ -1,7 +1,7 @@
 export interface DividendFlow {
-  D1: number;
-  D2: number;
-  D3: number;
+  'Div(Y-0)': number;
+  'Div(Y-1)': number;
+  'Div(Y-2)': number;
 }
 
 export interface GgmValuationDataResponse {

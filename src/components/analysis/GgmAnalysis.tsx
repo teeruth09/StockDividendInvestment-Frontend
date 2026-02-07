@@ -55,13 +55,13 @@ export default function GgmAnalysis({ data, isLoading }: GgmAnalysisProps) {
 
                   {/* DividendsFlow */}
                   <TableCell align="right">
-                    <FormattedNumberDisplay value={row.dividendsFlow.D1} decimalScale={2} />
+                    <FormattedNumberDisplay value={row.dividendsFlow["Div(Y-2)"]} decimalScale={2} />
                   </TableCell>
                   <TableCell align="right">
-                    <FormattedNumberDisplay value={row.dividendsFlow.D2} decimalScale={2} />
+                    <FormattedNumberDisplay value={row.dividendsFlow["Div(Y-1)"]} decimalScale={2} />
                   </TableCell>
                   <TableCell align="right">
-                    <FormattedNumberDisplay value={row.dividendsFlow.D3} decimalScale={2} />
+                    <FormattedNumberDisplay value={row.dividendsFlow["Div(Y-0)"]} decimalScale={2} />
                   </TableCell>
                   
                   {/* ราคาปัจจุบัน (บาท) */}
