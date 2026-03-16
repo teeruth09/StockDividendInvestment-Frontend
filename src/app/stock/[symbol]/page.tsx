@@ -19,6 +19,7 @@ import {
   DialogActions,
   Snackbar,
   Stack,
+  Paper,
 } from "@mui/material";
 import MuiTooltip from '@mui/material/Tooltip';
 import { Line } from "react-chartjs-2";
@@ -59,6 +60,8 @@ import { getValuationGgmApi } from '@/lib/api/ggm';
 import { AnalysisResponse } from '@/types/analysis';
 import { GgmApiResponse } from '@/types/ggm';
 import { TechinicalAnalysisApiResponse } from '@/types/technical';
+import ValuationBar from '@/components/analysis/ValuationBar';
+import { getVerdictColor } from '@/lib/helpers/colorHelper';
 
 
 ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, ChartTooltip, Legend);
@@ -236,7 +239,6 @@ export default function StockDetailPage() {
 
                 // หาค่า percentChange จาก currentSummary
                 const percentChange = summary?.summary[timeframe]?.percentChange ?? 0;
-                console.log("percentChange",percentChange)
                 //map data
                 setChartData({
                     labels: data.map(d => {
@@ -277,9 +279,15 @@ export default function StockDetailPage() {
     const [isTechnicalLoading, setIsTechnicalLoading] = useState(false);
 
     useEffect(() => {
+        if (symbol) {
+            // โหลด GGM ไว้เป็นพื้นฐานเสมอ เพราะต้องใช้ตัดสินใจร่วมกับเทคนิค
+            if (!ggmData) {
+                getValuationGgmApi(symbol).then(res => setGgmData(res));
+            }
+        }
         setAnalysisData(null); 
         setTechnicalData(null)
-    }, [symbol]);
+    }, [ggmData, symbol]);
     //โหลดข้อมูล (Lazy Load เมื่อเปิด Tab เท่านั้น)
     useEffect(() => {
         const fetchAnalysis = async () => {
@@ -296,6 +304,7 @@ export default function StockDetailPage() {
                 }
             }
             else if (activeTab === 'ggm' && !ggmData && symbol) {
+                console.log("a")
                 setIsGgmLoading(true);
                 try {
                     const res = await getValuationGgmApi(symbol);
@@ -543,10 +552,23 @@ export default function StockDetailPage() {
                                         <Typography sx={{ mt: 2 }}>กำลังวิเคราะห์ข้อมูล GGM...</Typography>
                                     </Box>
                                 ) : ggmData ? (
-                                    <GgmAnalysis 
-                                        data={ggmData.data || []} 
-                                        //source={analysisData.source}
-                                    />
+                                   <>
+                                        {/* 1. วาง Valuation Bar เป็นตัวสรุปภาพรวม (Visual Summary) */}
+                                        <Paper variant="outlined" sx={{ p: 3, mb: 3, borderRadius: 2, bgcolor: '#f8f9fa' }}>
+                                            <ValuationBar diffPercent={ggmData.data[0].diffPercent} />
+                                            <Typography variant="body2" align="center" sx={{ mt: 1, color: 'text.secondary' }}>
+                                                คำแนะนำเบื้องต้น: 
+                                                <span style={
+                                                    { fontWeight: 'bold', color: getVerdictColor(ggmData.data[0].meaning) }
+                                                }>
+                                                    {ggmData.data[0].meaning}
+                                                </span>
+                                            </Typography>
+                                        </Paper>
+
+                                        {/* 2. แสดงรายละเอียดตารางข้อมูล (Detailed Data) */}
+                                        <GgmAnalysis data={ggmData.data || []} />
+                                    </>
                                 ) : (
                                     <Alert severity="info">ไม่พบข้อมูลบทวิเคราะห์สำหรับหุ้นตัวนี้</Alert>
                                 )}
@@ -567,6 +589,7 @@ export default function StockDetailPage() {
                                     <TechnicalAnalysisView
                                         data={technicalData.data || []}                                   
                                         symbol={symbol}
+                                        valuation={ggmData?.data?.[0]}
                                     />
                                 ) : (
                                     <Alert severity="info">ไม่พบข้อมูลทางเทคนิคสำหรับหุ้นตัวนี้</Alert>

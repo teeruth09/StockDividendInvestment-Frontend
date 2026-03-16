@@ -37,14 +37,19 @@ ChartJS.register(
   Title, Tooltip, Legend, Filler
 );
 
+interface Valuation {
+  diffPercent: number;
+}
+
 interface TechnicalAnalysisProps {
   data: TechnicalData[];
   symbol: string;
+  valuation?: Valuation;
 }
 
-export default function TechnicalAnalysisView({ data, symbol }: TechnicalAnalysisProps) {
+export default function TechnicalAnalysisView({ data, symbol, valuation }: TechnicalAnalysisProps) {
   const displayData = [...data].reverse().slice(0, 15);
-  const verdict = getTechnicalVerdict(data);
+  const verdict = getTechnicalVerdict(data, valuation);
 
   // เตรียมข้อมูลสำหรับกราฟ (เรียงจากอดีตไปปัจจุบัน)
   const chartDataSrc = [...data].sort((a, b) => new Date(a.Date).getTime() - new Date(b.Date).getTime());

@@ -70,3 +70,16 @@ export const CLUSTER_STYLES: Record<string, { bg: string; color: string; label: 
     label: 'Sell on Fact (Neutral)' 
   },
 };
+
+export const getVerdictColor = (meaning: string) => {
+  switch (meaning) {
+    case 'Undervalue':
+      return '#2e7d32'; // สีเขียว (ราคาถูก/น่าซื้อ)
+    case 'Overvalue':
+      return '#d32f2f'; // สีแดง (ราคาแพง/ควรระวัง)
+    case 'Fairly Valued':
+      return '#ed6c02'; // สีส้ม/เหลือง (ราคาเหมาะสม)
+    default:
+      return '#757575'; // สีเทา (กรณีไม่มีข้อมูล)
+  }
+};

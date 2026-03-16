@@ -108,6 +108,27 @@ export default function GgmAnalysis({ data, isLoading }: GgmAnalysisProps) {
 
       <Box sx={{ mt: 2, p: 2, bgcolor: '#f9f9f9', borderRadius: 1 }}>
 
+        {/* 2. ส่วนอธิบายเกณฑ์ราคาเหมาะสม (Valuation Threshold) - เพิ่มใหม่ */}
+        <Typography variant="body2" sx={{ fontWeight: 'bold', color: 'primary.main', display: 'block', mb: 0.5 }}>
+          หมายเหตุและคำนิยาม:
+        </Typography>
+        <Box sx={{ mb: 2 }}>
+          <Typography variant="caption" sx={{ fontWeight: 'bold', color: 'text.secondary', display: 'block', mb: 0.5, pl: 0.5 }}>
+            เกณฑ์การประเมินความคุ้มค่าของราคา (Valuation Threshold ±2.5%)
+          </Typography>
+          <Box sx={{ pl: 2, borderLeft: '2px solid', borderColor: 'divider' }}>
+            <Typography variant="caption" sx={{ display: 'block', color: 'text.primary', mb: 0.5 }}>
+              • <strong>Undervalue (น่าซื้อ) :</strong> เมื่อราคาเป้าหมายสูงกว่าราคาตลาดเกิน <Box component="span" sx={{ color: '#2e7d32', fontWeight: 'bold' }}>2.5%</Box>
+            </Typography>
+            <Typography variant="caption" sx={{ display: 'block', color: 'text.primary', mb: 0.5 }}>
+              • <strong>Fairly Valued (เหมาะสม) :</strong> เมื่อราคาตลาดอยู่ในกรอบ <Box component="span" sx={{ color: '#ed6c02', fontWeight: 'bold' }}>+/- 2.5%</Box> ของราคาเป้าหมาย
+            </Typography>
+            <Typography variant="caption" sx={{ display: 'block', color: 'text.primary', mb: 0.5 }}>
+              • <strong>Overvalue (แพงเกินไป) :</strong> เมื่อราคาเป้าหมายต่ำกว่าราคาตลาดเกิน <Box component="span" sx={{ color: '#d32f2f', fontWeight: 'bold' }}>2.5%</Box>
+            </Typography>
+          </Box>
+        </Box>
+
         {/* ส่วนที่ อธิบาย T-DTS */}
         <Typography variant="caption" sx={{ color: 'text.secondary', mr: 0.5 }}>
           ศึกษาเพิ่มเติมเกี่ยวกับ: Multi-Period Dividend Discount Model
