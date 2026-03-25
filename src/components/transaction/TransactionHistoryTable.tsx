@@ -172,7 +172,7 @@ export default function TransactionHistoryTable() {
                     onClick={() => handleRequestSort(headCell)}
                   >
                     {headCell === 'createdAt' && 'วันที่บันทึก'}
-                    {headCell === 'stockSymbol' && 'หลักทรัพย์'}
+                    {headCell === 'stockSymbol' && 'หุ้น'}
                     {headCell === 'transactionType' && 'ประเภท'}
                     {headCell === 'quantity' && 'จำนวนหุ้น'}
                     {headCell === 'pricePerShare' && 'ราคาต่อหุ้น'}
